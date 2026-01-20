@@ -2,19 +2,19 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#E8F1F8">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="20dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="40dp">
+            android:layout_marginBottom="20dp">
 
             <ImageView
                 android:id="@+id/btnBack"
@@ -30,7 +30,7 @@
                 android:fontFamily="@font/poppinsbold"
                 android:text="Print"
                 android:textColor="#000000"
-                android:textSize="24sp" />
+                android:textSize="20sp" />
         </RelativeLayout>
 
         <LinearLayout
@@ -38,61 +38,123 @@
             android:layout_height="wrap_content"
             android:background="@drawable/gradient_cyan_bg"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:layout_marginBottom="20dp"
+            android:padding="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppinsbold"
                 android:text="Pairing Device"
+                android:layout_gravity="center"
                 android:textColor="@android:color/white"
-                android:textSize="20sp" />
+                android:textSize="16sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:weightSum="6"
+                android:gravity="center"
                 android:layout_marginTop="20dp"
+                android:baselineAligned="false"
                 android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/etDeviceAddress"
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="55dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/white_card_bg"
-                    android:fontFamily="@font/poppinsregular"
-                    android:hint="Device Address"
-                    android:paddingHorizontal="20dp"
-                    android:textColor="#333333"
-                    android:textColorHint="#999999"
-                    android:textSize="14sp" />
+                    android:layout_height="50dp"
+                    android:layout_gravity="bottom"
+                    android:layout_weight="5"
+                    android:background="@drawable/background_btn_scan">
+                    <EditText
+                        android:id="@+id/etDeviceAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:fontFamily="@font/poppinsregular"
+                        android:hint="Device Address"
+                        android:textAlignment="center"
+                        android:textColor="#333333"
+                        android:textColorHint="#999999"
+                        android:textSize="15sp" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/btnScan"
-                    android:layout_width="60dp"
-                    android:layout_height="55dp"
-                    android:layout_marginStart="12dp"
+                    android:layout_width="30dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="0.5"
                     android:background="@drawable/white_card_bg"
                     android:gravity="center">
 
                     <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:src="@drawable/scan_pairing" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
-        <Button
+        <androidx.cardview.widget.CardView
             android:id="@+id/btnConnect"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:layout_marginTop="25dp"
-            android:background="@drawable/white_card_bg"
-            android:fontFamily="@font/poppinsbold"
-            android:text="Connect"
-            android:textAllCaps="false"
-            android:textSize="18sp" />
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="10dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Connect"
+                    android:layout_gravity="center"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/poppinsbold"
+                    android:gravity="center"
+                    android:textSize="15sp"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="10dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="How to connect?"
+                    android:fontFamily="@font/poppinmedium"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#334155"
+                    android:layout_marginBottom="0dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/ho_to_connect"
+                        android:textSize="11sp"
+                        android:fontFamily="@font/poppinmedium"
+                        android:textColor="#64748B" />
+
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
     </LinearLayout>
 </ScrollView>

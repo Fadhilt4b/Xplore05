@@ -9,8 +9,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
         android:padding="20dp">
 
         <RelativeLayout
@@ -33,7 +31,7 @@
                 android:fontFamily="@font/poppinsbold"
                 android:text="Convert"
                 android:textColor="@android:color/black"
-                android:textSize="22sp" />
+                android:textSize="20sp" />
         </RelativeLayout>
 
         <LinearLayout
@@ -53,13 +51,22 @@
                 android:text="File Selection"
                 android:textColor="@android:color/black"
                 android:textSize="18sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gerber File (Required)"
+                android:textSize="14sp"
+                android:layout_gravity="start"
+                android:fontFamily="@font/poppinmedium"
+                android:textStyle="bold"
+                android:textColor="#475569" />
 
             <LinearLayout
                 android:id="@+id/btn_choose_file"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/gradient_cyan_bg"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/background_button"
                 android:orientation="horizontal"
                 android:paddingHorizontal="20dp"
                 android:paddingVertical="10dp"
@@ -70,10 +77,10 @@
                     android:id="@+id/tv_file_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppinsbold"
-                    android:text="Choose File"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="Choose Gerber File"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="15sp" />
 
                 <View
                     android:layout_width="1dp"
@@ -88,14 +95,77 @@
                     android:textColor="@android:color/white" />
             </LinearLayout>
 
+            <EditText
+                android:id="@+id/etGerber"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:gravity="top|start"
+                android:layout_marginTop="10dp"
+                android:hint="Or paste Gerber content here..."
+                android:inputType="textMultiLine"
+                android:padding="8dp"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:background="@drawable/edittext_bg"
+                android:layout_marginBottom="16dp" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/poppinsregular"
-                android:text="By proceeding, you agree to our Terms of use"
-                android:textColor="@color/default_color"
-                android:textSize="12sp" />
+                android:layout_gravity="start"
+                android:text="Drill File (Optional)"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#475569"
+                android:fontFamily="@font/poppinmedium"/>
+
+            <LinearLayout
+                android:id="@+id/btn_choose_file_Drill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/background_button"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="10dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="Choose Drill File"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="24dp"
+                    android:layout_marginHorizontal="12dp"
+                    android:background="@android:color/white" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="▼"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/etDrill"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginTop="10dp"
+                android:gravity="top|start"
+                android:hint="Or paste Drill content here..."
+                android:inputType="textMultiLine"
+                android:padding="8dp"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:background="@drawable/edittext_bg"
+                android:layout_marginBottom="16dp" />
+
         </LinearLayout>
 
         <TextView
@@ -118,15 +188,15 @@
                 android:layout_centerVertical="true"
                 android:fontFamily="@font/poppinsregular"
                 android:text="Pen width (mm)"
-                android:textColor="@android:color/black"
+                android:textColor="#64748B"
                 android:textSize="14sp" />
 
             <EditText
                 android:id="@+id/et_pen_width"
-                android:layout_width="110dp"
+                android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:background="@drawable/white_card_bg"
+                android:background="@drawable/edittext_bg"
                 android:gravity="center"
                 android:inputType="numberDecimal"
                 android:padding="12dp" />
@@ -143,15 +213,15 @@
                 android:layout_centerVertical="true"
                 android:fontFamily="@font/poppinsregular"
                 android:text="Feed rate (mm/min)"
-                android:textColor="@android:color/black"
+                android:textColor="#64748B"
                 android:textSize="14sp" />
 
             <EditText
                 android:id="@+id/et_feed_rate"
-                android:layout_width="109dp"
+                android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:background="@drawable/white_card_bg"
+                android:background="@drawable/edittext_bg"
                 android:elevation="2dp"
                 android:gravity="center"
                 android:inputType="number"
@@ -170,7 +240,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="10dp"
                 android:layout_weight="1"
-                android:background="@drawable/gradient_cyan_bg"
+                android:background="@drawable/background_button"
                 android:fontFamily="@font/poppinsbold"
                 android:text="Convert"
                 android:textColor="@android:color/white" />
@@ -180,7 +250,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
-                android:background="@drawable/gradient_cyan_bg"
+                android:background="@drawable/background_button"
                 android:layout_weight="1"
                 android:fontFamily="@font/poppinsbold"
                 android:text="Save"

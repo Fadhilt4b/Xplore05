@@ -12,9 +12,9 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="450dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/header_background"
-            android:padding="24dp">
+            android:padding="20dp">
 
             <TextView
                 android:id="@+id/tv_header_top"
@@ -22,15 +22,15 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
                 android:fontFamily="@font/poppinsbold"
-                android:text="Xplore ▾"
+                android:text="X-Plore"
                 android:textColor="@color/white"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <ImageView
                 android:id="@+id/img_illustration"
-                android:layout_width="280dp"
-                android:layout_height="230dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_marginTop="50dp"
                 android:layout_marginBottom="10dp"
@@ -54,6 +54,47 @@
                 android:shadowDx="6"
                 android:shadowDy="6"
                 android:shadowRadius="4" />
+
+            <TextView
+                android:id="@+id/deviceAddressHome"
+                android:layout_below="@+id/tv_header_bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:text="No device connected"
+                android:textStyle="italic"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="20dp"
+                android:fontFamily="@font/poppinmedium"
+                android:textColor="@color/white"/>
+            <TextView
+                android:id="@+id/deviceState"
+                android:layout_below="@+id/deviceAddressHome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="System Idle"
+                android:layout_marginLeft="20dp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/poppinmedium"
+                android:textSize="12sp"
+                android:textStyle="italic"/>
+            <LinearLayout
+                android:id="@+id/disconnectBt"
+                android:layout_below="@+id/deviceState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/bt_disconnect"
+                android:layout_marginLeft="20dp"
+                android:visibility="visible">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disconnect"
+                    android:fontFamily="@font/poppinmedium"
+                    android:textColor="@color/black"
+                    android:textSize="10sp"/>
+            </LinearLayout>
 
         </RelativeLayout>
 
@@ -96,7 +137,7 @@
                         android:fontFamily="@font/poppinsregular"
                         android:text="Turn Gerber files into\nCNC-ready G-Code\ninstantly.\n"
                         android:textColor="@color/white"
-                        android:textSize="10sp" />
+                        android:textSize="12sp" />
 
                 </LinearLayout>
 
@@ -110,6 +151,8 @@
                     android:layout_width="70dp"
                     android:layout_height="70dp"
                     android:layout_gravity="center_vertical"
+                    android:scaleX="1.2"
+                    android:scaleY="1.2"
                     android:src="@drawable/convert"
                     android:layout_marginRight="10dp"/>
 
@@ -145,9 +188,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppinsregular"
-                        android:text="Send your design\ndirectly to the printer.\n\n"
+                        android:text="Send your design\ndirectly to the printer."
                         android:textColor="@color/white"
-                        android:textSize="10sp" />
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <View
@@ -160,6 +203,8 @@
                 <ImageView
                     android:layout_width="70dp"
                     android:layout_height="70dp"
+                    android:scaleX="1.2"
+                    android:scaleY="1.2"
                     android:layout_gravity="center_vertical"
                     android:src="@drawable/print"
                     android:layout_marginRight="10dp"/>

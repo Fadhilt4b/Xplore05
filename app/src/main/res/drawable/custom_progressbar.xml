@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background track -->
     <item android:id="@android:id/background">
-        <shape>
-            <corners android:radius="10dp" />
-            <solid android:color="#FFFFFF" />
+        <shape android:shape="rectangle">
+            <corners android:radius="15dp"/>
+            <solid android:color="#E0E0E0"/>
         </shape>
     </item>
+
+    <!-- Progress with gradient -->
     <item android:id="@android:id/progress">
         <clip>
-            <shape>
-                <corners android:radius="10dp" />
-                <solid android:color="@color/default_color" />
+            <shape android:shape="rectangle">
+                <corners android:radius="15dp"/>
+                <gradient
+                    android:startColor="#2BEEF1"
+                    android:endColor="#06B2D0"
+                    android:angle="0"/>
             </shape>
         </clip>
     </item>
+
 </layer-list>

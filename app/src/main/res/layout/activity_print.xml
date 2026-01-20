@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#E8F1F8">
@@ -8,13 +8,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="20dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="30dp">
+            android:layout_marginBottom="20dp">
 
             <ImageView
                 android:id="@+id/btnBack"
@@ -34,13 +33,14 @@
         </RelativeLayout>
 
         <LinearLayout
+            android:id="@+id/gerberFilePicker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/white_card_bg"
             android:elevation="4dp"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -55,6 +55,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp"
                 android:background="@drawable/button_cyan_bg"
                 android:elevation="4dp"
                 android:orientation="horizontal"
@@ -65,7 +66,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/poppinsbold"
-                    android:text="Choose File"
+                    android:text="Choose G-Code File"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
 
@@ -82,46 +83,101 @@
                     android:textColor="@android:color/white" />
             </LinearLayout>
 
+            <EditText
+                android:id="@+id/etGcode"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:gravity="top|start"
+                android:hint="Or paste Gerber content here..."
+                android:inputType="textMultiLine"
+                android:padding="8dp"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:background="@drawable/edittext_bg"
+                android:layout_marginBottom="16dp" />
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvStats"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/poppinsregular"
-                android:text="By proceeding, you agree to our Terms of use"
-                android:textColor="@color/default_color"
-                android:textSize="10sp" />
+                android:padding="12dp"
+                android:background="#EFF6FF"
+                android:textSize="13sp"
+                android:textColor="#1E40AF"
+                android:fontFamily="monospace"
+                android:text="Statistics will appear here after conversion" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:background="@drawable/white_card_bg"
             android:elevation="4dp"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppinsbold"
-                android:text="G-code Preview"
-                android:textColor="@android:color/black"
+                android:text="Layout Preview"
+                android:textColor="#334155"
                 android:textSize="18sp" />
-        </LinearLayout>
 
-        <Button
-            android:id="@+id/btnPrint"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="32dp"
-            android:background="@drawable/button_cyan_bg"
-            android:elevation="4dp"
-            android:fontFamily="@font/poppinsbold"
-            android:text="Print"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="18sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp">
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="1">
+                <LinearLayout
+                    android:id="@+id/btnCancelPrint"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="0dp"
+                    android:layout_marginRight="0dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/background_button_cancel"
+                    android:visibility="gone"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:fontFamily="@font/poppinsbold"
+                        android:gravity="center"
+                        android:text="Cancel Print"
+                        android:textColor="@color/white"
+                        android:textSize="15sp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/btnPrint"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="0dp"
+                    android:layout_marginRight="0dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/background_button"
+                    android:visibility="visible"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:fontFamily="@font/poppinsbold"
+                        android:gravity="center"
+                        android:text="Print"
+                        android:textColor="@color/white"
+                        android:textSize="15sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -135,40 +191,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
                 android:progress="60"
+                android:visibility="gone"
                 android:progressDrawable="@drawable/custom_progressbar" />
-
-            <RelativeLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/progressText"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp">
+                android:layout_gravity="center"
+                android:layout_centerInParent="true"
+                android:fontFamily="@font/poppinmedium"
+                android:visibility="gone"
+                android:text="60%"
+                android:textColor="#000000"
+                android:textSize="15sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppinsbold"
-                    android:text="0%"
-                    android:textColor="#000000"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:fontFamily="@font/poppinsbold"
-                    android:text="60%"
-                    android:textColor="#000000"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:fontFamily="@font/poppinsbold"
-                    android:text="100%"
-                    android:textColor="#000000"
-                    android:textSize="16sp" />
-            </RelativeLayout>
         </LinearLayout>
 
     </LinearLayout>
-</ScrollView>
+    <include
+        layout="@layout/view_loading_overlay" />
+</FrameLayout>

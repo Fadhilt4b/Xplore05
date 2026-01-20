@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Xplore App</string>
+    <string name="ho_to_connect">1. Turn on the device and connect to network\n2. Open the "Cloud" tab in main menu\n3. Tap show QR Code\n4. Scan the QR Code or input device address manually</string>
 </resources>
