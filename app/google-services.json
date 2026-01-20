@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "681054532482",
+    "firebase_url": "https://capstone-design-c79f3-default-rtdb.firebaseio.com",
+    "project_id": "capstone-design-c79f3",
+    "storage_bucket": "capstone-design-c79f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681054532482:android:802c6897be90d00c12559b",
+        "android_client_info": {
+          "package_name": "com.example.xploreapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqcyBkkr9LvPLZoZ4sHYMBrh_K91OxmYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
