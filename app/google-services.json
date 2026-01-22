@@ -10,6 +10,25 @@
       "client_info": {
         "mobilesdk_app_id": "1:681054532482:android:802c6897be90d00c12559b",
         "android_client_info": {
+          "package_name": "com.aditya.x_plore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqcyBkkr9LvPLZoZ4sHYMBrh_K91OxmYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681054532482:android:963b30dd349cef1012559b",
+        "android_client_info": {
           "package_name": "com.example.xploreapp"
         }
       },

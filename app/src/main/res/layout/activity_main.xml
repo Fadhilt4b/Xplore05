@@ -1,26 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F0F4F8">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="40dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/header_background"
-            android:padding="20dp">
+            android:paddingTop="10dp"
+            android:elevation="8dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="20dp">
 
             <TextView
                 android:id="@+id/tv_header_top"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
                 android:fontFamily="@font/poppinsbold"
                 android:text="X-Plore"
                 android:textColor="@color/white"
@@ -32,8 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:layout_marginTop="50dp"
-                android:layout_marginBottom="10dp"
+                android:layout_below="@id/tv_header_top"
                 android:contentDescription="Illustration"
                 android:src="@drawable/pcb_image" />
 
@@ -43,7 +43,6 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/img_illustration"
                 android:layout_marginTop="0dp"
-                android:layout_marginLeft="10dp"
                 android:fontFamily="@font/alfaslaboneregular"
                 android:text="What would \nyou like to do?"
                 android:textColor="@color/white"
@@ -64,7 +63,6 @@
                 android:text="No device connected"
                 android:textStyle="italic"
                 android:layout_marginTop="10dp"
-                android:layout_marginLeft="20dp"
                 android:fontFamily="@font/poppinmedium"
                 android:textColor="@color/white"/>
             <TextView
@@ -73,7 +71,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="System Idle"
-                android:layout_marginLeft="20dp"
                 android:textColor="@color/white"
                 android:fontFamily="@font/poppinmedium"
                 android:textSize="12sp"
@@ -85,7 +82,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:background="@drawable/bt_disconnect"
-                android:layout_marginLeft="20dp"
                 android:visibility="visible">
                 <TextView
                     android:layout_width="wrap_content"
@@ -101,17 +97,24 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="40dp"
+            android:gravity="right"
             android:orientation="vertical"
-            android:layout_marginLeft="80dp">
+            android:layout_marginLeft="0dp">
+            <View
+                android:layout_width="match_parent"
+                android:layout_weight="3"
+                android:layout_height="0dp">
+            </View>
 
             <LinearLayout
                 android:id="@+id/btn_convert"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="350dp"
+                android:layout_height="125dp"
+                android:elevation="8dp"
                 android:layout_marginBottom="20dp"
                 android:background="@drawable/card_option_bg"
                 android:orientation="horizontal"
+                android:layout_weight="1"
                 android:padding="20dp"
                 android:clickable="true"
                 android:focusable="true">
@@ -160,11 +163,12 @@
 
             <LinearLayout
                 android:id="@+id/btn_print"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="350dp"
+                android:layout_height="125dp"
                 android:background="@drawable/card_option_bg"
                 android:elevation="8dp"
                 android:orientation="horizontal"
+                android:layout_weight="1"
                 android:padding="20dp"
                 android:clickable="true"
                 android:focusable="true">
@@ -210,7 +214,13 @@
                     android:layout_marginRight="10dp"/>
             </LinearLayout>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="3">
+            </View>
+
         </LinearLayout>
 
     </LinearLayout>
-</ScrollView>
+</FrameLayout>
