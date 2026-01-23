@@ -263,7 +263,7 @@ class PrintActivity : BaseActivity() {
         return name
     }
     private fun uploadToGithubAndSendFirebase() {
-        val githubToken = "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"
+        val githubToken = "xxxxxx"
         val repo = "xadityacndrp/capstone-gcode-storage"
         val branch = "gcode"
         val path = "fileGcode/$alamatDevice/$fileName"
