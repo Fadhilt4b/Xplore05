@@ -44,6 +44,9 @@ class ConvertActivity : AppCompatActivity() {
     private lateinit var tvGcode: TextView
     private lateinit var previewView: PreviewView
     private lateinit var scrollView: ScrollView
+    private lateinit var tvGerber: TextView
+    private lateinit var tvDrill: TextView
+
 
 
     private var isConnected = false
@@ -56,18 +59,18 @@ class ConvertActivity : AppCompatActivity() {
     private val PICK_GERBER_FILE = 1
     private val PICK_DRILL_FILE = 2
 
-    private val filePickerLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val data: Intent? = result.data
-            val uri: Uri? = data?.data
-            uri?.let {
-                val fileName = getFileName(it)
-                tvFileName.text = fileName
-            }
-        }
-    }
+//    private val filePickerLauncher = registerForActivityResult(
+//        ActivityResultContracts.StartActivityForResult()
+//    ) { result ->
+//        if (result.resultCode == Activity.RESULT_OK) {
+//            val data: Intent? = result.data
+//            val uri: Uri? = data?.data
+//            uri?.let {
+//                val fileName = getFileName(it)
+//                tvFileName.text = fileName
+//            }
+//        }
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,22 +97,24 @@ class ConvertActivity : AppCompatActivity() {
         tvGcode = findViewById(R.id.tv_gcode_preview)
         previewView = findViewById(R.id.previewView)
         scrollView = findViewById(R.id.scrollView)
+        tvGerber = findViewById(R.id.tvGerber)
+        tvDrill = findViewById(R.id.tvDrill)
 
         etFeedRate.setText("1000")
         etPenWidth.setText("0.5")
 
         val prefs = getSharedPreferences("APP_PREF", MODE_PRIVATE)
         val deviceAddress = prefs.getString("DEVICE_ADDRESS", null)
+
         stateMesin = prefs.getString("RUNNING STATE", "Idle").toString()
         isConnected = !deviceAddress.isNullOrEmpty()
 
-
         btnLoadGerber.setOnClickListener {
-            openFilePicker()
+            openFilePicker(PICK_GERBER_FILE)
         }
 
         btnLoadDrill.setOnClickListener {
-            //openFilePicker()
+            openFilePicker(PICK_DRILL_FILE)
         }
 
         btnConvert.setOnClickListener {
@@ -142,11 +147,74 @@ class ConvertActivity : AppCompatActivity() {
         }
     }
 
-    private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "*/*" // Mengizinkan semua jenis file, bisa diubah ke ".gbr" jika perlu
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        filePickerLauncher.launch(intent)
+//    private fun openFilePicker() {
+//        val intent = Intent(Intent.ACTION_GET_CONTENT)
+//        intent.type = "*/*" // Mengizinkan semua jenis file, bisa diubah ke ".gbr" jika perlu
+//        intent.addCategory(Intent.CATEGORY_OPENABLE)
+//        filePickerLauncher.launch(intent)
+//    }
+
+    private fun openFilePicker(requestCode: Int) {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }
+        startActivityForResult(intent, requestCode)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (resultCode == RESULT_OK && data?.data != null) {
+            val uri = data.data!!
+
+            val fileName = getFileName(uri)
+            val content = readFileFromUri(uri)
+
+            val ext = fileName.substringAfterLast('.', "").lowercase()
+
+            when (requestCode) {
+                PICK_GERBER_FILE -> {
+                    if (ext != "gbr") {
+                        if (requestCode == PICK_GERBER_FILE) {
+                            Toast.makeText(
+                                this,
+                                "Hanya file .gbr yang diperbolehkan",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return
+                        }
+                    }
+                    tvGerber.text = fileName
+                    gerberText = content
+                    etGerber.setText(content)
+                    Toast.makeText(this, "Gerber loaded", Toast.LENGTH_SHORT).show()
+                }
+
+                PICK_DRILL_FILE -> {
+                    if (ext != "xln") {
+                        if(requestCode == PICK_DRILL_FILE) {
+                            Toast.makeText(
+                                this,
+                                "Hanya file .xln yang diperbolehkan",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return
+                        }
+                    }
+                    tvDrill.text = fileName
+                    drillText = content
+                    etDrill.setText(content)
+                    Toast.makeText(this, "Drill loaded", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun readFileFromUri(uri: Uri): String {
+        return contentResolver.openInputStream(uri)?.bufferedReader()?.use {
+            it.readText()
+        } ?: ""
     }
 
     private fun getFileName(uri: Uri): String {
@@ -171,10 +239,6 @@ class ConvertActivity : AppCompatActivity() {
         }
         return result ?: "Unknown File"
     }
-
-    //OpenFile
-    //onActivityResult
-    //readFileFromUri
 
     private fun convertToGcode() {
         try {

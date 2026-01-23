@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.cardview.widget.CardView
+import androidx.compose.material3.TopAppBar
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -57,6 +58,10 @@ class PrintActivity : BaseActivity() {
     private var alamatDevice: String = " "
 
     private val PICK_GCODE = 1001
+
+    private var uploadCall: Call? = null
+    private val UPLOAD_TIMEOUT_MS = 10_000L // 10 detik
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -153,6 +158,8 @@ class PrintActivity : BaseActivity() {
         }
 
         btnCancelPrint.setOnClickListener {
+            uploadCall?.cancel()
+
             showLoading()
             val db = FirebaseDatabase.getInstance().reference
             val deviceRef = db.child("deviceAddress").child(alamatDevice)
@@ -256,7 +263,7 @@ class PrintActivity : BaseActivity() {
         return name
     }
     private fun uploadToGithubAndSendFirebase() {
-        val githubToken = "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"
+        val githubToken = "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"
         val repo = "xadityacndrp/capstone-gcode-storage"
         val branch = "gcode"
         val path = "fileGcode/$alamatDevice/$fileName"
@@ -283,23 +290,74 @@ class PrintActivity : BaseActivity() {
             .put(body)
             .build()
 
-        OkHttpClient().newCall(request).enqueue(object : Callback {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+
+        uploadCall = client.newCall(request)
+
+        val handler = android.os.Handler(mainLooper)
+
+        val timeoutRunnable = Runnable {
+            if (uploadCall != null && !uploadCall!!.isCanceled()) {
+                uploadCall!!.cancel()
+                hideLoading()
+                Toast.makeText(
+                    this,
+                    "Upload Timeout",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        handler.postDelayed(timeoutRunnable, UPLOAD_TIMEOUT_MS)
+
+        uploadCall!!.enqueue(object : Callback {
+
             override fun onFailure(call: Call, e: IOException) {
+                handler.removeCallbacks(timeoutRunnable)
+
                 runOnUiThread {
                     hideLoading()
-                    Toast.makeText(this@PrintActivity, "Upload gagal", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@PrintActivity, "Upload Dibatalkan", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    val rawUrl =
-                        "https://raw.githubusercontent.com/$repo/$branch/$path"
+                handler.removeCallbacks(timeoutRunnable)
 
+                if (response.isSuccessful) {
+                    val rawUrl = "https://raw.githubusercontent.com/$repo/$branch/$path"
                     sendToFirebase(rawUrl)
+                } else {
+                    runOnUiThread {
+                        hideLoading()
+                        Toast.makeText(this@PrintActivity, "Upload gagal", Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
             }
         })
+
+//        OkHttpClient().newCall(request).enqueue(object : Callback {
+//            override fun onFailure(call: Call, e: IOException) {
+//                runOnUiThread {
+//                    hideLoading()
+//                    Toast.makeText(this@PrintActivity, "Upload gagal", Toast.LENGTH_SHORT).show()
+//                }
+//            }
+//
+//            override fun onResponse(call: Call, response: Response) {
+//                if (response.isSuccessful) {
+//                    val rawUrl =
+//                        "https://raw.githubusercontent.com/$repo/$branch/$path"
+//
+//                    sendToFirebase(rawUrl)
+//                }
+//            }
+//        })
     }
 
     private fun sendToFirebase(rawUrl: String) {

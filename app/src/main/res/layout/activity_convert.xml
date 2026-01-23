@@ -101,6 +101,14 @@
                         android:text="▼"
                         android:textColor="@android:color/white" />
                 </LinearLayout>
+                <TextView
+                    android:id="@+id/tvGerber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No file selected"
+                    android:textSize="10sp"
+                    android:gravity="center"
+                    android:layout_marginTop="5dp"/>
 
                 <EditText
                     android:id="@+id/etGerber"
@@ -158,6 +166,14 @@
                         android:text="▼"
                         android:textColor="@android:color/white" />
                 </LinearLayout>
+                <TextView
+                    android:id="@+id/tvDrill"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No file selected"
+                    android:textSize="10sp"
+                    android:gravity="center"
+                    android:layout_marginTop="5dp"/>
 
                 <EditText
                     android:id="@+id/etDrill"
