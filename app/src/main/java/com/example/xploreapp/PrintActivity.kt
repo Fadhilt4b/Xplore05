@@ -62,7 +62,6 @@ class PrintActivity : BaseActivity() {
     private var uploadCall: Call? = null
     private val UPLOAD_TIMEOUT_MS = 10_000L // 10 detik
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_print)
@@ -263,7 +262,7 @@ class PrintActivity : BaseActivity() {
         return name
     }
     private fun uploadToGithubAndSendFirebase() {
-        val githubToken = "xxxxxx"
+        val githubToken = ""
         val repo = "xadityacndrp/capstone-gcode-storage"
         val branch = "gcode"
         val path = "fileGcode/$alamatDevice/$fileName"
