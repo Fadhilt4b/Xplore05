@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -130,6 +131,16 @@
                         android:textColor="@android:color/white" />
                 </LinearLayout>
 
+                <TextView
+                    android:id="@+id/tvGerber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:text="No file selected"
+                    android:layout_marginBottom="10dp"
+                    android:textSize="10sp" />
+
                 <EditText
                     android:id="@+id/etGcode"
                     android:layout_width="match_parent"
@@ -139,6 +150,7 @@
                     android:inputType="textMultiLine"
                     android:padding="8dp"
                     android:textSize="12sp"
+                    android:visibility="visible"
                     android:fontFamily="monospace"
                     android:background="@drawable/edittext_bg"
                     android:layout_marginBottom="16dp" />
@@ -258,7 +270,45 @@
 
         </LinearLayout>
     </ScrollView>
+    <FrameLayout
+        android:id="@+id/sendingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone"
+        android:elevation="16dp">
+
+        <LinearLayout
+            android:layout_width="220dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_rounded_white"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- Spinner putar -->
+            <ProgressBar
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/abu_abu" />
+
+            <!-- Teks status -->
+            <TextView
+                android:id="@+id/sendingStatusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="Mengirim ke device..."
+                android:textColor="#333333"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
     <include
         layout="@layout/view_loading_overlay" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

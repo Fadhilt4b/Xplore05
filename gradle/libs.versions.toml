@@ -13,6 +13,7 @@ cardview = "1.0.0"
 material = "1.13.0"
 googleGmsGoogleServices = "4.4.4"
 firebaseDatabase = "22.0.1"
+firebaseStorage = "22.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

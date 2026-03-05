@@ -61,6 +61,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
                 android:text="No device connected"
+                android:visibility="invisible"
                 android:textStyle="italic"
                 android:layout_marginTop="10dp"
                 android:fontFamily="@font/poppinmedium"
@@ -71,6 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="System Idle"
+                android:visibility="invisible"
                 android:textColor="@color/white"
                 android:fontFamily="@font/poppinmedium"
                 android:textSize="12sp"
@@ -82,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:background="@drawable/bt_disconnect"
-                android:visibility="visible">
+                android:visibility="invisible">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
