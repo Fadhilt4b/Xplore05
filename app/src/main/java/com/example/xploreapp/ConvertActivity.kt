@@ -43,6 +43,8 @@ class ConvertActivity : AppCompatActivity() {
     private lateinit var tvGerber       : TextView
     private lateinit var tvApertures    : TextView
 
+    private lateinit var etPenWidth2     : EditText
+
     private lateinit var etPenWidth     : EditText
     private lateinit var etFeedRate     : EditText
     private lateinit var etCirclePasses : EditText
