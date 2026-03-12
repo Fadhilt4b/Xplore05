@@ -45,6 +45,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".AnalyticsActivity"
+            android:exported="false" />
+
+
+        <activity
             android:name=".ScanFuncActivity"
             android:exported="false" />
 

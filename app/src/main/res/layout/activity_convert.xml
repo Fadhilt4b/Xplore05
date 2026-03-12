@@ -18,6 +18,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
                 android:layout_marginBottom="24dp">
 
                 <ImageView
@@ -479,6 +480,7 @@
                     android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/files"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"

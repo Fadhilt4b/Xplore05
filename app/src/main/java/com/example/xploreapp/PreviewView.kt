@@ -15,7 +15,7 @@ class PreviewView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private var previewLines = listOf<PreviewLine>()
+    var previewLines = listOf<PreviewLine>()
 
     // ── Paints (warna asli kamu) ──────────────
     private val tracePaint = Paint().apply {

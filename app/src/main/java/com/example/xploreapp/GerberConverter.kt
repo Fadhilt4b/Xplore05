@@ -1,5 +1,8 @@
 package com.example.xploreapp
 
+
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import kotlin.math.*
 
 class GerberConverter(private val settings: Settings) {
@@ -548,7 +551,17 @@ data class Settings(
     val traceMultiPass: Boolean = true,
     val traceOffset   : Float   = 0.5f
 )
-data class PreviewLine(val x1: Float, val y1: Float, val x2: Float, val y2: Float, val isTravel: Boolean)
+
+@Parcelize
+data class LineSegment(
+    val x1: Float,
+    val y1: Float,
+    val x2: Float,
+    val y2: Float
+) : Parcelable
+
+@Parcelize
+data class PreviewLine(val x1: Float, val y1: Float, val x2: Float, val y2: Float, val isTravel: Boolean) : Parcelable
 data class ConversionResult(
     val gcode        : String,
     val previewLines : List<PreviewLine>,

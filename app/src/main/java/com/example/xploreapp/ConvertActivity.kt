@@ -17,10 +17,15 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.ArrayList
 import kotlin.math.sqrt
 import kotlin.math.abs
 import android.text.Editable
 import android.text.TextWatcher
+import org.w3c.dom.Text
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
 
 class ConvertActivity : AppCompatActivity() {
 
@@ -58,6 +63,8 @@ class ConvertActivity : AppCompatActivity() {
     private lateinit var previewView    : PreviewView
     private lateinit var scrollView     : ScrollView
 
+    private lateinit var filess : TextView
+
     private lateinit var sendingOverlay: View
     private lateinit var sendingStatusText: TextView
 
@@ -69,6 +76,12 @@ class ConvertActivity : AppCompatActivity() {
     private var currentFileName = ""
     private var fileName        = ""
 
+    private var traces = 0
+    private var flashes = 0
+    private var linesGcode = 0
+    private var previewLines = ArrayList<PreviewLine>()
+
+
 
 
     // ═══════════════════════════════════════════
@@ -76,7 +89,7 @@ class ConvertActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_convert)
 
-        // Status & navigation bar color (non-deprecated approach)
+        // Status & navigation bar color
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             @Suppress("DEPRECATION")
             window.statusBarColor = getColor(R.color.abu_abu)
@@ -92,6 +105,9 @@ class ConvertActivity : AppCompatActivity() {
         btnPrint        = findViewById(R.id.btnPrint)
         btnSave         = findViewById(R.id.btn_save)
         btnShare        = findViewById(R.id.btnShare)
+
+        filess = findViewById(R.id.files)
+
 
         cardFile        = findViewById(R.id.file)
         cardSetting     = findViewById(R.id.setting)
@@ -140,6 +156,7 @@ class ConvertActivity : AppCompatActivity() {
         btnLoadGerber.setOnClickListener   { openFilePicker() }
         btnConvert.setOnClickListener      {
             showSendingOverlay("Convert file to G-code...")
+            filess.text = fileName
             convertToGcode()
         }
         btnPrint.setOnClickListener        { printGcode() }
@@ -156,7 +173,6 @@ class ConvertActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val txt = s?.toString() ?: return
-                // Hanya proses jika konten terlihat seperti gerber (ada %ADD atau G04)
                 if (txt.length > 20 && (txt.contains("%ADD") || txt.contains("G04"))) {
                     showApertureInfo(txt)
                 } else if (txt.isBlank()) {
@@ -173,7 +189,7 @@ class ConvertActivity : AppCompatActivity() {
         }
     }
 
-    // ── File Picker (ActivityResultLauncher) ──
+    // ── File Picker ──
     private val gerberPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -190,7 +206,6 @@ class ConvertActivity : AppCompatActivity() {
         currentFileName = fileName
         tvGerber.text = fileName
         etGerber.setText(gerberText)
-//        Toast.makeText(this, "Loaded: $fileName", Toast.LENGTH_SHORT).show()
         showApertureInfo(gerberText, fileName)
     }
 
@@ -202,7 +217,6 @@ class ConvertActivity : AppCompatActivity() {
         gerberPickerLauncher.launch(intent)
     }
 
-    // ── Parse & tampilkan aperture ────────────
     private fun showApertureInfo(text: String, fileName: String = "") {
         val isSvg = fileName.lowercase().endsWith(".svg")
                 || text.trimStart().startsWith("<svg")
@@ -211,13 +225,10 @@ class ConvertActivity : AppCompatActivity() {
         if (isSvg) { showSvgInfo(text); return }
 
         val joined = text.replace("\r", "")
-
-        // Baca format spec
         val fmtM = Regex("FSLAX(\\d)(\\d)Y(\\d)(\\d)").find(joined)
         val xi   = fmtM?.groupValues?.get(1)?.toIntOrNull() ?: 2
         val xd   = fmtM?.groupValues?.get(2)?.toIntOrNull() ?: 4
 
-        // Parse apertures
         val apRe = Regex("%ADD(\\d+)([A-Z]),([^*]+)\\*%")
         val sbAp = StringBuilder()
         sbAp.appendLine("Format     : Gerber")
@@ -249,7 +260,6 @@ class ConvertActivity : AppCompatActivity() {
             sbAp.appendLine("$code  $desc")
         }
 
-        // Hitung oblong pads dan trace biasa
         val oblongCount = countOblongPads(joined, xi, xd)
         val flashCount  = Regex("D03\\*").findAll(joined).count()
         val traceEst    = Regex("D01\\*").findAll(joined).count() - oblongCount
@@ -257,7 +267,6 @@ class ConvertActivity : AppCompatActivity() {
         sbAp.appendLine()
         sbAp.appendLine("Apertures : $apCount")
         sbAp.appendLine("Flashes   : $flashCount")
-//        sbAp.appendLine("Header pad: $oblongCount")
         sbAp.appendLine("Traces    : $traceEst")
 
         tvApertures.text = sbAp.toString().trimEnd()
@@ -265,7 +274,7 @@ class ConvertActivity : AppCompatActivity() {
     }
 
     private fun countOblongPads(joined: String, xi: Int, xd: Int): Int {
-        val apertures = mutableMapOf<String, Pair<String, Float>>() // code → (type, diameter)
+        val apertures = mutableMapOf<String, Pair<String, Float>>()
         val apRe = Regex("%ADD(\\d+)([A-Z]),([^*]+)\\*%")
         for (m in apRe.findAll(joined)) {
             val code   = "D${m.groupValues[1]}"
@@ -304,7 +313,6 @@ class ConvertActivity : AppCompatActivity() {
         return count
     }
 
-    // ── Info untuk file SVG ───────────────────
     private fun showSvgInfo(text: String) {
         val circles   = Regex("<circle",   RegexOption.IGNORE_CASE).findAll(text).count()
         val rects     = Regex("<rect",     RegexOption.IGNORE_CASE).findAll(text).count()
@@ -345,13 +353,10 @@ class ConvertActivity : AppCompatActivity() {
         if (polylines > 0) sb.appendLine("Polyline : $polylines -> trace")
         if (polygons  > 0) sb.appendLine("Polygon  : $polygons  -> trace")
         if (paths     > 0) sb.appendLine("Path     : $paths     -> trace (bezier/arc flatten)")
-//        sb.append("\nHanya STROKE yang digambar. Fill diabaikan.")
 
         tvApertures.text = sb.toString().trimEnd()
         cardApertures.visibility = View.VISIBLE
     }
-
-
 
     private fun toMM(s: String, xi: Int, xd: Int): Float {
         val neg    = s.startsWith("-")
@@ -361,7 +366,7 @@ class ConvertActivity : AppCompatActivity() {
         return if (neg) -v else v
     }
 
-    // ── Convert ───────────────────────────────
+    // ── Convert ──
     private fun convertToGcode() {
         gerberText = etGerber.text.toString()
         if (gerberText.isBlank()) {
@@ -386,6 +391,9 @@ class ConvertActivity : AppCompatActivity() {
             gcodeText = result.gcode
             tvGcode.setText(gcodeText)
 
+            // SIMPAN HASIL GARIS KE VARIABEL CLASS
+            previewLines = ArrayList(result.previewLines)
+
             tvStats.text = buildString {
                 if (result.isSvg) {
                     appendLine("Format      : SVG")
@@ -395,6 +403,9 @@ class ConvertActivity : AppCompatActivity() {
                 appendLine("Traces      : ${result.stats.traces}")
                 appendLine("Flashes     : ${result.stats.flashes}")
                 append    ("G-code lines: ${result.stats.gcodeLines}")
+                linesGcode = result.stats.gcodeLines
+                traces = result.stats.traces
+                flashes = result.stats.flashes
             }
 
             previewView.updatePreview(result.previewLines)
@@ -406,7 +417,6 @@ class ConvertActivity : AppCompatActivity() {
 
             scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
             hideSendingOverlay()
-//            Toast.makeText(this, "Konversi berhasil!", Toast.LENGTH_SHORT).show()
 
         } catch (e: Exception) {
             hideSendingOverlay()
@@ -415,13 +425,9 @@ class ConvertActivity : AppCompatActivity() {
         }
     }
 
-    // ── Save / Share / Print ──────────────────
     private fun saveGcode() {
         if (gcodeText.isEmpty()) { Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return }
         try {
-            if(fileName.substringAfterLast('.', "").lowercase() == "gbr") {
-                fileName = fileName.removeSuffix(".gbr")
-            } else fileName = fileName.removeSuffix(".svg")
             val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
             val out = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "$fileName-$ts.gcode")
             FileOutputStream(out).use { it.write(gcodeText.toByteArray()) }
@@ -448,19 +454,28 @@ class ConvertActivity : AppCompatActivity() {
     }
 
     private fun printGcode() {
-        if (gcodeText.isEmpty()) { Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return }
-        if (stateMesin == "Running") { Toast.makeText(this, "Printer sedang berjalan!", Toast.LENGTH_SHORT).show(); return }
+        if (gcodeText.isEmpty()) {
+            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return
+        }
+        if (stateMesin == "Running") {
+            Toast.makeText(this, "Printer sedang berjalan!", Toast.LENGTH_SHORT).show(); return
+        }
+        
         val target = if (isConnected) PrintActivity::class.java else PairingActivity::class.java
+        val printIntent = Intent(this, target).apply {
+            putParcelableArrayListExtra("preview_lines", previewLines)
+        }
 
-        if(fileName.substringAfterLast('.', "").lowercase() == "gbr") {
-            fileName = fileName.removeSuffix(".gbr")
-        } else fileName = fileName.removeSuffix(".svg")
+        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("GCODE_LINES", linesGcode.toString()).apply()
         getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().putString("EXTRA_GCODE", gcodeText).apply()
         getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("NAME_FILE", fileName).apply()
-        startActivity(Intent(this, target)); finish()
+        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("TRACES", traces.toString()).apply()
+        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("FLASHES", flashes.toString()).apply()
+        
+        startActivity(printIntent)
+        finish()
     }
 
-    // ── Utils ─────────────────────────────────
     private fun readFileFromUri(uri: Uri): String =
         contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: ""
 

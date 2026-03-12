@@ -2,6 +2,7 @@ package com.example.xploreapp
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
@@ -28,6 +29,8 @@ class PrintActivity : BaseActivity() {
     private lateinit var btnBack: ImageView
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
+
+    private lateinit var previewView: PreviewView
     private lateinit var gerberCard: LinearLayout
     private lateinit var btnPickGcode: LinearLayout
     private lateinit var etPreview: EditText
@@ -40,16 +43,28 @@ class PrintActivity : BaseActivity() {
     // Loading overlay untuk menampilkan spinner saat menunggu device
     private lateinit var sendingOverlay: View
     private lateinit var sendingStatusText: TextView
-
     private var isFromPicker = false
     private var gcodeContent = ""
     private var fileName = ""
+
+    private lateinit var fileSelected : TextView
     private var alamatDevice: String = ""
 
     // Listener yang aktif menunggu sendingState → false dan isPrinting → true
     private var sendingStateListener: ValueEventListener? = null
+    private var wasPrinting: Boolean = false
 
+    private var startTime: Long = 0L // Tambahkan ini <---
     private val PICK_GCODE = 1001
+
+    private var lines: String? = ""
+
+    private var traces: String? = ""
+
+    private var flashes: String? = ""
+
+    private var namaFile: String? = ""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,34 +80,78 @@ class PrintActivity : BaseActivity() {
         gerberCard       = findViewById(R.id.gerberFilePicker)
         btnPickGcode     = findViewById(R.id.btnLoadGcode)
         etPreview        = findViewById(R.id.etGcode)
+        previewView      = findViewById(R.id.previewView)
         etGcode          = findViewById(R.id.etGcode)
         tvStats          = findViewById(R.id.tvStats)
         btnPrint         = findViewById(R.id.btnPrint)
         btnCancelPrint   = findViewById(R.id.btnCancelPrint)
         deviceState      = findViewById(R.id.deviceState)
+        fileSelected     = findViewById(R.id.tvGerber)
         sendingOverlay   = findViewById(R.id.sendingOverlay)      // tambahkan di layout
         sendingStatusText = findViewById(R.id.sendingStatusText)  // tambahkan di layout
 
         // Sembunyikan overlay di awal
         sendingOverlay.visibility = View.GONE
 
-        // Restore gcode dari SharedPreferences
-        val gcode = getSharedPreferences("APP_PREF", MODE_PRIVATE)
-            .getString("EXTRA_GCODE", null)
-        etGcode.setText(gcode ?: "")
+
+        //ngambil data conversion stats dari SharedPreferences
+        val prefsReff = getSharedPreferences("APP_REFF", MODE_PRIVATE)
+        traces = prefsReff.getString("TRACES", null)
+        flashes = prefsReff.getString("FLASHES", null)
+        lines = prefsReff.getString("GCODE_LINES", null)
+        namaFile = prefsReff.getString("NAME_FILE", null)
+
+        if (traces != null || flashes != null || lines != null) {
+            tvStats.text = buildString {
+                appendLine("Traces      : ${traces ?: "-"}")
+                appendLine("Flashes     : ${flashes ?: "-"}")
+                append    ("G-code lines: ${lines ?: "-"}")
+            }
+        } else {
+            tvStats.text = "No stats available"
+        }
 
         btnPickGcode.setOnClickListener { openGcodePicker() }
+
+
+        //Ambil data gamabr intent
+        val previewData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+
+            intent.getParcelableArrayListExtra("preview_lines", PreviewLine::class.java)
+        } else {
+            // Android 12 ke bawah
+            @Suppress("DEPRECATION")
+            intent.getParcelableArrayListExtra<PreviewLine>("preview_lines")
+        }
+
+        // Ambil G-code dari SharedPreferences
+        val savedGcode = getSharedPreferences("APP_PREF", MODE_PRIVATE).getString("EXTRA_GCODE", null)
+        if (!savedGcode.isNullOrEmpty()) {
+            etGcode.setText(savedGcode)
+            gcodeContent = savedGcode
+        }
+
+        if (previewData != null) {
+            // Gunakan .post agar dipastikan view sudah siap ukurannya sebelum menggambar
+            previewView.post {
+                previewView.updatePreview(previewData)
+            }
+        } else if (!savedGcode.isNullOrEmpty()) {
+            // Fallback: Jika data intent kosong, baru ambil dari G-code SharedPreferences
+            val result = GerberConverter(Settings()).convert(savedGcode)
+            previewView.post { previewView.updatePreview(result.previewLines) }
+        }
 
         // Ambil alamat device
         val deviceAddress = getSharedPreferences("APP_PREF", MODE_PRIVATE)
             .getString("DEVICE_ADDRESS", null)
         alamatDevice = deviceAddress ?: ""
 
-        val namaFile = getSharedPreferences("APP_REFF", MODE_PRIVATE)
-            .getString("FILE_NAME", null)
+        fileSelected.text = namaFile ?: "No file selected"
+
 
         deviceAddresstv = findViewById(R.id.deviceAddress)
-        deviceAddresstv.text = "Connected device: $deviceAddress"
+        deviceAddresstv.text = "Connected device: ${deviceAddress ?: "Not Connected"}"
 
         // Listener realtime Firebase untuk progress & isPrinting
         deviceAddress?.let { addr ->
@@ -109,7 +168,28 @@ class PrintActivity : BaseActivity() {
                     progressBar.progress = safeProgress
                     progressText.text    = "$safeProgress%"
 
-                    if (isPrint) {
+                    if (wasPrinting && !isPrint) {
+                        val intent = Intent(this@PrintActivity, AnalyticsActivity::class.java)
+                        val totalLines = gcodeContent.split("\n").filter { it.isNotBlank() }.size
+
+                        // Kirim data jika diperlukan di halaman Analytics
+                        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().putString("GCODE_LINES", lines).apply()
+                        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().putString("NAME_FILE", namaFile).apply()
+                        intent.putExtra("TOTAL_LINES", totalLines)
+                        val ts  = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                        intent.putExtra("PRINT_TIME", ts)
+                        intent.putExtra("LATENCY", "${(20..50).random()} ms") // Simulasi latency acak
+
+
+                        startActivity(intent)
+                        finish()
+                    }
+
+                    wasPrinting = isPrint
+                    progressBar.progress = safeProgress
+                    progressText.text    = "$safeProgress"
+
+                        if (isPrint) {
                         gerberCard.visibility     = View.GONE
                         progressBar.visibility    = View.VISIBLE
                         progressText.visibility   = View.VISIBLE
@@ -147,7 +227,7 @@ class PrintActivity : BaseActivity() {
             fileName = if (isFromPicker) {
                 fileName.removeSuffix(".gcode") + "-$timeSuffix.gcode"
             } else {
-                "$namaFile$timeSuffix.gcode"
+                "${namaFile ?: "print"}$timeSuffix.gcode"
             }
             uploadToFirebaseStorage()
         }
@@ -325,8 +405,11 @@ class PrintActivity : BaseActivity() {
     }
 
     private fun navigateToMain() {
+        // Hapus data G-code dan Statistik saat keluar
         getSharedPreferences("APP_PREF", MODE_PRIVATE)
             .edit().remove("EXTRA_GCODE").apply()
+        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().clear().apply()
+        
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }
@@ -357,7 +440,14 @@ class PrintActivity : BaseActivity() {
         isFromPicker = true
 
         etPreview.setText(gcodeContent)
-        tvStats.text = "File: $fileName\nJumlah baris: ${gcodeContent.lines().size}"
+        
+        // Update stats khusus untuk file yang di-pick manual
+        tvStats.text = buildString {
+            appendLine("File        : $fileName")
+            appendLine("G-code lines: ${gcodeContent.lines().size}")
+            append    ("Status      : Manual Load")
+        }
+        fileSelected.text = fileName
     }
 
     private fun getFileName(uri: Uri): String {
