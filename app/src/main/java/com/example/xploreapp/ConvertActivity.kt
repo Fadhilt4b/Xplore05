@@ -81,7 +81,21 @@ class ConvertActivity : AppCompatActivity() {
     private var linesGcode = 0
     private var previewLines = ArrayList<PreviewLine>()
 
+    private val createFileLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+            uri?.let {
+                try {
+                    contentResolver.openOutputStream(it)?.use { stream ->
+                        stream.write(gcodeText.toByteArray())
+                    }
 
+                    Toast.makeText(this, "File berhasil disimpan", Toast.LENGTH_LONG).show()
+
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Gagal simpan: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
 
 
     // ═══════════════════════════════════════════
@@ -426,13 +440,23 @@ class ConvertActivity : AppCompatActivity() {
     }
 
     private fun saveGcode() {
-        if (gcodeText.isEmpty()) { Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return }
-        try {
-            val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
-            val out = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "$fileName-$ts.gcode")
-            FileOutputStream(out).use { it.write(gcodeText.toByteArray()) }
-            Toast.makeText(this, "Tersimpan di Downloads/Gcode-$ts.gcode", Toast.LENGTH_LONG).show()
-        } catch (e: Exception) { Toast.makeText(this, "Gagal simpan: ${e.message}", Toast.LENGTH_LONG).show() }
+
+        if (gcodeText.isEmpty()) {
+            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if(fileName.substringAfterLast('.', "").lowercase() == "gbr") {
+            fileName = fileName.removeSuffix(".gbr")
+        } else {
+            fileName = fileName.removeSuffix(".svg")
+        }
+
+        val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+
+        val suggestedName = "$fileName-$ts.gcode"
+
+        createFileLauncher.launch(suggestedName)
     }
 
     private fun shareGcode() {

@@ -386,18 +386,27 @@ class GerberConverter(private val settings: Settings) {
         val F     = settings.feedrate
         val penW  = settings.penWidth
 
-        lines += "G21"; lines += "G90"; lines += "G00 X0.000 Y0.000"; lines += ""
+        lines += "G00 X0.000 Y0.000"; lines += ""
+
+        // Track posisi pen untuk optimasi ✓
+        var lastX = 0f; var lastY = 0f
+        val updatePos: (Float, Float) -> Unit = { x, y -> lastX = x; lastY = y }
+        val needMove: (Float, Float) -> Boolean = { x, y ->
+            kotlin.math.abs(lastX - x) > 0.001f || kotlin.math.abs(lastY - y) > 0.001f
+        }
 
         for (obj in data.flashes) {
             when (obj.apType) {
-                "C" -> genCircleFlash(obj, F, lines)
-                "R" -> genRectFlash(obj, penW, F, lines)
-                "P" -> genPolygonFlash(obj, F, lines)
+                "C" -> { genCircleFlash(obj, F, lines); updatePos(obj.x - obj.apParams[0]/2f, obj.y) }
+                "R" -> { genRectFlash(obj, penW, F, lines) }
+                "P" -> { genPolygonFlash(obj, F, lines); updatePos(obj.x - obj.apParams[0]/2f, obj.y) }
             }
         }
-        for (obj in data.traces) genTrace(obj, penW, F, lines)
+        for (obj in data.traces) {
+            genTrace(obj, penW, F, lines, lastX, lastY, needMove, updatePos) // ✓
+        }
 
-        lines += "G00 X0.000 Y0.000"; lines += "M30"
+        lines += "G00 X0.000 Y0.000"
 
         val gcodeText = lines.joinToString("\n")
         return ConversionResult(
@@ -459,13 +468,18 @@ class GerberConverter(private val settings: Settings) {
         }
     }
 
-    private fun genTrace(obj: TraceObj, penW: Float, F: Int, out: MutableList<String>) {
+    private fun genTrace(
+        obj: TraceObj, penW: Float, F: Int, out: MutableList<String>,
+        lastX: Float, lastY: Float,
+        needMove: (Float, Float) -> Boolean,
+        updatePos: (Float, Float) -> Unit
+    ) {
         val w = obj.apParams[0]
         val passes = maxOf(1, round(w / penW).toInt())
         if (passes <= 1 || !TRACE_MULTIPASS) {
-            out += "G00 X${f3(obj.x1)} Y${f3(obj.y1)}"
-            out += "G01 X${f3(obj.x1)} Y${f3(obj.y1)} F$F"
+            if (needMove(obj.x1, obj.y1)) out += "G00 X${f3(obj.x1)} Y${f3(obj.y1)}" // ✓ skip redundant
             out += "G01 X${f3(obj.x2)} Y${f3(obj.y2)} F$F"
+            updatePos(obj.x2, obj.y2)
             return
         }
         val dx = obj.x2-obj.x1; val dy = obj.y2-obj.y1

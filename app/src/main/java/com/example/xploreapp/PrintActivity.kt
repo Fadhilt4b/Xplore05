@@ -165,8 +165,8 @@ class PrintActivity : BaseActivity() {
                     val safeProgress = progress.coerceIn(0, 100)
                     val isPrint    = snapshot.child("isPrinting").getValue(Boolean::class.java) ?: false
 
-                    progressBar.progress = safeProgress
-                    progressText.text    = "$safeProgress%"
+//                    progressBar.progress = safeProgress
+//                    progressText.text    = "$safeProgress%"
 
                     if (wasPrinting && !isPrint) {
                         val intent = Intent(this@PrintActivity, AnalyticsActivity::class.java)
