@@ -196,7 +196,8 @@ class PrintActivity : BaseActivity() {
                         btnPrint.visibility       = View.GONE
                         btnCancelPrint.visibility = View.VISIBLE
                         deviceState.text          = "System Running"
-                    } else {
+                    }
+                        else {
                         gerberCard.visibility     = View.VISIBLE
                         progressBar.visibility    = View.GONE
                         progressText.visibility   = View.GONE
