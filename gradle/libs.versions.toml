@@ -15,6 +15,7 @@ material = "1.13.0"
 googleGmsGoogleServices = "4.4.4"
 firebaseDatabase = "22.0.1"
 firebaseStorage = "22.0.1"
+remoteCreationCompose = "1.0.0-alpha05"
 
 [libraries]
 google-code-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
@@ -37,6 +38,7 @@ androidx-cardview = { group = "androidx.cardview", name = "cardview", version.re
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
+androidx-compose-remote-creation-compose = { group = "androidx.compose.remote", name = "remote-creation-compose", version.ref = "remoteCreationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

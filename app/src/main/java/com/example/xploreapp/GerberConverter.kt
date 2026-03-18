@@ -386,7 +386,7 @@ class GerberConverter(private val settings: Settings) {
         val F     = settings.feedrate
         val penW  = settings.penWidth
 
-        lines += "G00 X0.000 Y0.000"; lines += ""
+        lines += "G00 X0.000 Y0.000"
 
         // Track posisi pen untuk optimasi ✓
         var lastX = 0f; var lastY = 0f

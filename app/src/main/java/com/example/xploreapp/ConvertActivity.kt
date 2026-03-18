@@ -1,86 +1,185 @@
 package com.example.xploreapp
 
+import android.annotation.SuppressLint
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.graphics.Color
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
+import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
+import com.hoho.android.usbserial.driver.ProbeTable
+import com.hoho.android.usbserial.driver.UsbSerialDriver
+import com.hoho.android.usbserial.driver.UsbSerialPort
+import com.hoho.android.usbserial.driver.UsbSerialProber
+import com.hoho.android.usbserial.util.SerialInputOutputManager
+import org.json.JSONObject
+import kotlinx.parcelize.Parcelize
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.ArrayList
-import kotlin.math.sqrt
+import java.util.*
 import kotlin.math.abs
-import android.text.Editable
-import android.text.TextWatcher
-import org.w3c.dom.Text
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import kotlin.math.sqrt
 
-
-class ConvertActivity : AppCompatActivity() {
+class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
 
     // ── Views ─────────────────────────────────
-    private lateinit var tvFileName     : TextView
-    private lateinit var btnBack        : ImageView
-    private lateinit var btnLoadGerber  : LinearLayout
-    private lateinit var btnConvert     : Button
-    private lateinit var btnPrint       : LinearLayout
-    private lateinit var btnSave        : LinearLayout
-    private lateinit var btnShare       : LinearLayout
+    private lateinit var tvFileName      : TextView
+    private lateinit var btnBack         : ImageView
+    private lateinit var btnLoadGerber   : LinearLayout
+    private lateinit var btnConvert      : Button
+    private lateinit var btnPrint        : LinearLayout
+    private lateinit var btnSave         : LinearLayout
+    private lateinit var btnShare        : LinearLayout
+    private lateinit var btnSendOffline  : LinearLayout
 
-    private lateinit var cardFile       : CardView
-    private lateinit var cardSetting    : CardView
-    private lateinit var cardPreview    : CardView
-    private lateinit var cardGcode      : CardView
-    private lateinit var cardApertures  : LinearLayout
+    private lateinit var cardFile        : CardView
+    private lateinit var cardSetting     : CardView
+    private lateinit var cardPreview     : CardView
+    private lateinit var cardGcode       : CardView
+    private lateinit var cardApertures   : LinearLayout
 
-    private lateinit var etGerber       : EditText
-    private lateinit var tvGerber       : TextView
-    private lateinit var tvApertures    : TextView
+    private lateinit var etGerber        : EditText
+    private lateinit var tvGerber        : TextView
+    private lateinit var tvApertures     : TextView
 
-    private lateinit var etPenWidth2     : EditText
-
-    private lateinit var etPenWidth     : EditText
-    private lateinit var etFeedRate     : EditText
-    private lateinit var etCirclePasses : EditText
-    private lateinit var etCircleOffset : EditText
-    private lateinit var etTraceOffset  : EditText
-    private lateinit var switchMultiPass: Switch
+    private lateinit var etPenWidth      : EditText
+    private lateinit var etFeedRate      : EditText
+    private lateinit var etCirclePasses  : EditText
+    private lateinit var etCircleOffset  : EditText
+    private lateinit var etTraceOffset   : EditText
+    private lateinit var switchMultiPass : Switch
     private lateinit var layoutTraceOffset: LinearLayout
 
-    private lateinit var tvStats        : TextView
-    private lateinit var tvGcode        : EditText
-    private lateinit var previewView    : PreviewView
-    private lateinit var scrollView     : ScrollView
+    private lateinit var tvStats         : TextView
+    private lateinit var tvGcode         : EditText
+    private lateinit var previewView     : PreviewView
+    private lateinit var scrollView      : ScrollView
+    private lateinit var filess          : TextView
 
-    private lateinit var filess : TextView
-
-    private lateinit var sendingOverlay: View
-    private lateinit var sendingStatusText: TextView
+    private lateinit var sendingOverlay    : View
+    private lateinit var sendingStatusText : TextView
 
     // ── State ─────────────────────────────────
-    private var isConnected  = false
+    private var isConnected     = false
     private var gerberText      = ""
     private var gcodeText       = ""
     private var stateMesin      = ""
     private var currentFileName = ""
     private var fileName        = ""
+    private var fileNameSerial  = ""
+    private var traces          = 0
+    private var flashes         = 0
+    private var linesGcode      = 0
+    private var previewLines    = ArrayList<PreviewLine>()
 
-    private var traces = 0
-    private var flashes = 0
-    private var linesGcode = 0
-    private var previewLines = ArrayList<PreviewLine>()
+    enum class Mode {
+        HEARTBEAT,
+        GCODE
+    }
 
+    var isInitialized = false
+    private var currentMode = Mode.HEARTBEAT
+
+    private var lastReceived = System.currentTimeMillis()
+
+    private var heartbeatHandler = Handler(Looper.getMainLooper())
+
+    private val dataAccumulator = StringBuilder()
+
+    private lateinit var tvDeviceStatus: TextView
+    private var usbPort: UsbSerialPort? = null
+    private lateinit var usbManager: UsbManager
+    private var ioManager: SerialInputOutputManager? = null
+
+    private var isUSBConnected = false
+
+    private var gcodeLines: List<String> = emptyList()
+    private var sendIndex = 0
+    private val BATCH_SIZE = 50
+    private var sendingGcode = false
+
+    private val heartbeatRunnable = object : Runnable {
+        override fun run() {
+            if (currentMode == Mode.HEARTBEAT) {
+                sendHeartbeat()
+                heartbeatHandler.postDelayed(this, 5000)
+            }
+        }
+    }
+
+    fun sendHeartbeat() {
+        val json = JSONObject().apply {
+            put("type", "HB")
+        }.toString() + "\n"
+
+        try {
+            usbPort?.write(json.toByteArray(), 1000)
+
+            lastReceived = System.currentTimeMillis()
+        } catch (e: IOException) {
+            updateStatus(false)
+        }
+    }
+
+    fun startHeartbeat() {
+        currentMode = Mode.HEARTBEAT
+        heartbeatHandler.removeCallbacksAndMessages(null)
+        heartbeatHandler.postDelayed(heartbeatRunnable, 1000)
+    }
+
+    private val watchdogHandler = Handler(Looper.getMainLooper())
+
+    private val watchdogRunnable = object : Runnable {
+        override fun run() {
+
+            val now = System.currentTimeMillis()
+
+            if (now - lastReceived > 12000) {
+                updateStatus(false)
+            }
+
+            watchdogHandler.postDelayed(this, 2000)
+        }
+    }
+
+    fun startWatchdog() {
+        watchdogHandler.post(watchdogRunnable)
+    }
+
+    fun stopWatchdog() {
+        watchdogHandler.removeCallbacksAndMessages(null)
+    }
+
+    private val usbReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (UsbManager.ACTION_USB_DEVICE_DETACHED == intent?.action) {
+                updateStatus(false)
+                Toast.makeText(context, "Kabel USB Dicabut!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ── File Picker ───────────────────────────
     private val createFileLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
             uri?.let {
@@ -88,17 +187,36 @@ class ConvertActivity : AppCompatActivity() {
                     contentResolver.openOutputStream(it)?.use { stream ->
                         stream.write(gcodeText.toByteArray())
                     }
-
                     Toast.makeText(this, "File berhasil disimpan", Toast.LENGTH_LONG).show()
-
                 } catch (e: Exception) {
                     Toast.makeText(this, "Gagal simpan: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
 
+    private val gerberPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK || result.data?.data == null) return@registerForActivityResult
+        val uri  = result.data!!.data!!
+        fileName = getFileName(uri)
+        val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+        fileNameSerial = fileName.removeSuffix(".gbr").removeSuffix(".svg")
+        fileNameSerial = "$fileNameSerial-$ts.gcode"
+        val ext  = fileName.substringAfterLast('.', "").lowercase()
+        if (ext !in listOf("gbr", "ger", "gtl", "gbl", "gts", "gbs", "txt", "svg")) {
+            Toast.makeText(this, "Pilih file Gerber atau SVG (.gbr/.svg)", Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+        gerberText      = readFileFromUri(uri)
+        currentFileName = fileName
+        tvGerber.text   = fileName
+        etGerber.setText(gerberText)
+        showApertureInfo(gerberText, fileName)
+    }
 
     // ═══════════════════════════════════════════
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_convert)
@@ -106,82 +224,91 @@ class ConvertActivity : AppCompatActivity() {
         // Status & navigation bar color
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             @Suppress("DEPRECATION")
-            window.statusBarColor = getColor(R.color.abu_abu)
+            window.statusBarColor    = getColor(R.color.abu_abu)
             @Suppress("DEPRECATION")
             window.navigationBarColor = getColor(R.color.abu_abu)
         }
 
-        // Bind views
-        tvFileName      = findViewById(R.id.tv_file_name)
-        btnBack         = findViewById(R.id.btn_back)
-        btnLoadGerber   = findViewById(R.id.btn_choose_file)
-        btnConvert      = findViewById(R.id.btn_convert_process)
-        btnPrint        = findViewById(R.id.btnPrint)
-        btnSave         = findViewById(R.id.btn_save)
-        btnShare        = findViewById(R.id.btnShare)
+        usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
 
-        filess = findViewById(R.id.files)
-
-
-        cardFile        = findViewById(R.id.file)
-        cardSetting     = findViewById(R.id.setting)
-        cardPreview     = findViewById(R.id.preview)
-        cardGcode       = findViewById(R.id.gcode)
-        cardApertures   = findViewById(R.id.cardApertures)
-
-        etGerber        = findViewById(R.id.etGerber)
-        tvGerber        = findViewById(R.id.tvGerber)
-        tvApertures     = findViewById(R.id.tvApertures)
-
-        etPenWidth      = findViewById(R.id.et_pen_width)
-        etFeedRate      = findViewById(R.id.et_feed_rate)
-        etCirclePasses  = findViewById(R.id.et_circle_passes)
-        etCircleOffset  = findViewById(R.id.et_circle_offset)
-        etTraceOffset   = findViewById(R.id.et_trace_offset)
-        switchMultiPass = findViewById(R.id.switchMultiPass)
+        // ── Bind views ────────────────────────
+        tvDeviceStatus   = findViewById(R.id.tvDeviceStatus)
+        tvFileName       = findViewById(R.id.tv_file_name)
+        btnBack          = findViewById(R.id.btn_back)
+        btnLoadGerber    = findViewById(R.id.btn_choose_file)
+        btnConvert       = findViewById(R.id.btn_convert_process)
+        btnPrint         = findViewById(R.id.btnPrint)
+        btnSave          = findViewById(R.id.btn_save)
+        btnShare         = findViewById(R.id.btnShare)
+        btnSendOffline   = findViewById(R.id.btnSendFileOffline)
+        filess           = findViewById(R.id.files)
+        cardFile         = findViewById(R.id.file)
+        cardSetting      = findViewById(R.id.setting)
+        cardPreview      = findViewById(R.id.preview)
+        cardGcode        = findViewById(R.id.gcode)
+        cardApertures    = findViewById(R.id.cardApertures)
+        etGerber         = findViewById(R.id.etGerber)
+        tvGerber         = findViewById(R.id.tvGerber)
+        tvApertures      = findViewById(R.id.tvApertures)
+        etPenWidth       = findViewById(R.id.et_pen_width)
+        etFeedRate       = findViewById(R.id.et_feed_rate)
+        etCirclePasses   = findViewById(R.id.et_circle_passes)
+        etCircleOffset   = findViewById(R.id.et_circle_offset)
+        etTraceOffset    = findViewById(R.id.et_trace_offset)
+        switchMultiPass  = findViewById(R.id.switchMultiPass)
         layoutTraceOffset = findViewById(R.id.layoutTraceOffset)
-
-        tvStats         = findViewById(R.id.tvStats)
-        tvGcode         = findViewById(R.id.tv_gcode_preview)
-        previewView     = findViewById(R.id.previewView)
-        scrollView      = findViewById(R.id.scrollView)
-
+        tvStats          = findViewById(R.id.tvStats)
+        tvGcode          = findViewById(R.id.tv_gcode_preview)
+        previewView      = findViewById(R.id.previewView)
+        scrollView       = findViewById(R.id.scrollView)
         sendingOverlay   = findViewById(R.id.sendingOverlay)
         sendingStatusText = findViewById(R.id.sendingStatusText)
 
-        // Default values
+        tvDeviceStatus = findViewById(R.id.tvDeviceStatus)
+
+        checkUsbConnection()
+
+        // ── Default values ────────────────────
         etPenWidth.setText("0.5")
         etFeedRate.setText("60")
         etCirclePasses.setText("2")
         etCircleOffset.setText("0.25")
         etTraceOffset.setText("0.5")
 
-        // Initial visibility
-        cardPreview.visibility = View.GONE
-        cardGcode.visibility   = View.GONE
+        // ── Initial visibility ─────────────────
+        cardPreview.visibility   = View.GONE
+        cardGcode.visibility     = View.GONE
         cardApertures.visibility = View.GONE
 
-        // Prefs
-        val prefs = getSharedPreferences("APP_PREF", MODE_PRIVATE)
+        // ── Prefs ─────────────────────────────
+        val prefs   = getSharedPreferences("APP_PREF", MODE_PRIVATE)
         stateMesin  = prefs.getString("RUNNING STATE", "Idle").toString()
         isConnected = !prefs.getString("DEVICE_ADDRESS", null).isNullOrEmpty()
 
-        // Listeners
-        btnLoadGerber.setOnClickListener   { openFilePicker() }
-        btnConvert.setOnClickListener      {
+        // ── Listeners ─────────────────────────
+        btnLoadGerber.setOnClickListener { openFilePicker() }
+        btnConvert.setOnClickListener {
             showSendingOverlay("Convert file to G-code...")
             filess.text = fileName
             convertToGcode()
         }
-        btnPrint.setOnClickListener        { printGcode() }
-        btnSave.setOnClickListener         { saveGcode() }
-        btnShare.setOnClickListener        { shareGcode() }
+
+        btnSendOffline.setOnClickListener {
+            if(isUSBConnected) {
+                sendData(fileNameSerial, gcodeText)
+                showSendingOverlay("Sending G-Code File")
+            }
+            else Toast.makeText(this, "Serial wire not connected", Toast.LENGTH_SHORT).show()
+        }
+
+        btnPrint.setOnClickListener  { printGcode() }
+        btnSave.setOnClickListener   { saveGcode() }
+        btnShare.setOnClickListener  { shareGcode() }
 
         switchMultiPass.setOnCheckedChangeListener { _, checked ->
             layoutTraceOffset.visibility = if (checked) View.VISIBLE else View.GONE
         }
 
-        // Deteksi paste manual ke etGerber
         etGerber.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -202,49 +329,369 @@ class ConvertActivity : AppCompatActivity() {
             startActivity(Intent(this@ConvertActivity, MainActivity::class.java)); finish()
         }
     }
-
-    // ── File Picker ──
-    private val gerberPickerLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode != RESULT_OK || result.data?.data == null) return@registerForActivityResult
-        val uri      = result.data!!.data!!
-        fileName = getFileName(uri)
-        val ext      = fileName.substringAfterLast('.', "").lowercase()
-
-        if (ext !in listOf("gbr", "ger", "gtl", "gbl", "gts", "gbs", "txt", "svg")) {
-            Toast.makeText(this, "Pilih file Gerber atau SVG (.gbr/.svg)", Toast.LENGTH_SHORT).show()
-            return@registerForActivityResult
-        }
-        gerberText = readFileFromUri(uri)
-        currentFileName = fileName
-        tvGerber.text = fileName
-        etGerber.setText(gerberText)
-        showApertureInfo(gerberText, fileName)
+    private fun requestDeviceAddress() {
+        try {
+            val req = JSONObject()
+            req.put("type", "req_address")
+            val data = req.toString() + "\n"
+            usbPort?.write(data.toByteArray(), 1000)
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
-    private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (UsbManager.ACTION_USB_DEVICE_ATTACHED == intent.action) {
+            checkUsbConnection()
         }
-        gerberPickerLauncher.launch(intent)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onResume() {
+        super.onResume()
+        // Daftarkan receiver untuk deteksi cabut kabel
+        val filter = IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED)
+        registerReceiver(usbReceiver, filter, RECEIVER_EXPORTED)
+
+        // Selalu cek koneksi saat halaman kembali aktif
+        checkUsbConnection()
+    }
+
+    override fun onNewData(data: ByteArray?) {
+        val chunk = String(data ?: return)
+        dataAccumulator.append(chunk)
+
+        while (dataAccumulator.contains("\n")) {
+            val idx = dataAccumulator.indexOf("\n")
+            val line = dataAccumulator.substring(0, idx).trim()
+            dataAccumulator.delete(0, idx + 1)
+
+            try {
+                val json = JSONObject(line)
+
+                lastReceived = System.currentTimeMillis()
+
+                // Cek Device Address
+                if (json.has("deviceAddress") && !isInitialized ) {
+                    isInitialized = true
+                    val addr = json.getString("deviceAddress")
+                    runOnUiThread {
+                        tvDeviceStatus.text = "Connected: $addr"
+                    }
+                    startHeartbeat()
+                    startWatchdog()
+                }
+
+                if(json.has("ready")) {
+                    val readyType = json.getString("ready")
+
+                    if(readyType == "gcodeReady") {
+
+                        currentMode = Mode.GCODE
+                        heartbeatHandler.removeCallbacksAndMessages(null)
+
+                        gcodeLines = gcodeText.split("\n")
+                            .map { it.trim() }
+                            .filter {it.isNotEmpty()}
+
+                        val jsonLineCount = JSONObject().apply {
+                            put("type", "lineCount")
+                            put("lineCount", gcodeLines.size)
+                        }.toString() + "\n"
+
+                        try {
+                            usbPort?.write(jsonLineCount.toByteArray(), 1000)
+                        } catch (e: IOException) {
+                            updateStatus(false)
+                            return
+                        }
+
+                        sendIndex = 0
+                        sendingGcode = true
+
+                        sendNextBatch()
+                    }
+
+                    else if(readyType == "next") {
+                        sendNextBatch()
+                    }
+                }
+
+                if (json.has("type") && json.getString("type") == "done") {
+
+                    sendingGcode = false
+                    currentMode = Mode.HEARTBEAT
+
+                    startHeartbeat()
+
+                    runOnUiThread {
+                        hideSendingOverlay()
+                        Toast.makeText(this, "G-code Finished!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.d("WEMOS_RAW", "Data: $line")
+            }
+        }
+    }
+
+    private fun sendNextBatch() {
+
+        if (!sendingGcode) return
+
+        val end = minOf(sendIndex + BATCH_SIZE, gcodeLines.size)
+
+        for (i in sendIndex until end) {
+            val jsonGcode = JSONObject().apply {
+                put("type", "gcodeFile")
+                put("gcodeFile", gcodeLines[i])
+            }.toString() + "\n"
+
+            try {
+                usbPort?.write(jsonGcode.toByteArray(), 1000)
+                lastReceived = System.currentTimeMillis()
+                val progress = ( (i + 1) * 100) / gcodeLines.size
+                updateSendingOverlayText("Sending G-Code File:  ${progress} %")
+            } catch (e: IOException) {
+                updateStatus(false)
+                return
+            }
+        }
+
+        sendIndex = end
+
+        // kalau sudah habis kirim semua line
+        if (sendIndex >= gcodeLines.size) {
+
+            val endFile = JSONObject().apply {
+                put("type", "endFile")
+            }.toString() + "\n"
+
+            try {
+                usbPort?.write(endFile.toByteArray(), 1000)
+            } catch (e: IOException) {
+                updateStatus(false)
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(usbReceiver)
+    }
+
+    override fun onRunError(e: Exception?) {
+        updateStatus(false)
+    }
+
+    private fun checkUsbConnection() {
+        if (usbPort != null && usbPort!!.isOpen) return
+
+        val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
+        if (availableDrivers.isEmpty()) {
+            updateStatus(false)
+            return
+        }
+
+        val driver = availableDrivers[0]
+        if (!usbManager.hasPermission(driver.device)) return
+
+        val connection = usbManager.openDevice(driver.device) ?: return
+
+        usbPort = driver.ports[0]
+        try {
+            usbPort?.open(connection)
+            // Jika menggunakan USB-to-TTL eksternal, kamu bisa coba naikkan ke 115200
+            usbPort?.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+
+            // MATIKAN DTR agar tidak memicu reset berlebih (opsional)
+            usbPort?.dtr = false
+
+            ioManager = SerialInputOutputManager(usbPort, this)
+            // Perkecil interval pembacaan agar lebih instan (default biasanya 100ms)
+            ioManager?.readTimeout = 50
+            ioManager?.start()
+
+            updateStatus(true)
+            isUSBConnected = true
+
+            // Kirim request segera
+            requestDeviceAddress()
+
+        } catch (e: IOException) {
+            isUSBConnected = false
+            updateStatus(false)
+        }
+    }
+
+    private fun sendData(fileName: String, content: String) {
+        val dataNama = fileName
+
+        val jsonFileName = JSONObject().apply {
+            put("type", "fileName")
+            put("fileName", dataNama)
+        }.toString() + "\n"
+
+        try {
+            usbPort?.write(jsonFileName.toByteArray(), 1000)
+            Toast.makeText(this, "Data '$jsonFileName' Terkirim", Toast.LENGTH_SHORT).show()
+        } catch (e: IOException) {
+            updateStatus(false)
+        }
+    }
+
+    private fun updateStatus(isConnected: Boolean) {
+        runOnUiThread {
+            if (isConnected) {
+                // Jika baru terhubung secara hardware, tampilkan status umum dulu
+                tvDeviceStatus.text = "Terhubung (Menunggu Respon...)"
+                tvDeviceStatus.visibility = View.VISIBLE
+            } else {
+                // Jika kabel dicabut
+                tvDeviceStatus.visibility = View.INVISIBLE
+                stopWatchdog()
+                heartbeatHandler.removeCallbacksAndMessages(null)
+
+                isInitialized = false
+                sendingGcode = false
+                currentMode = Mode.HEARTBEAT
+
+                // Bersihkan koneksi
+                ioManager?.stop()
+                ioManager = null
+                try { usbPort?.close() } catch (e: Exception) {}
+                usbPort = null
+            }
+        }
+    }
+
+    private fun convertToGcode() {
+        gerberText = etGerber.text.toString()
+        if (gerberText.isBlank()) {
+            hideSendingOverlay()
+            Toast.makeText(this, "Load file terlebih dahulu!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val settings = Settings(
+                penWidth       = etPenWidth.text.toString().toFloatOrNull()     ?: 0.5f,
+                feedrate       = etFeedRate.text.toString().toIntOrNull()        ?: 60,
+                circlePasses   = etCirclePasses.text.toString().toIntOrNull()    ?: 2,
+                circleOffset   = etCircleOffset.text.toString().toFloatOrNull()  ?: 0.25f,
+                traceMultiPass = switchMultiPass.isChecked,
+                traceOffset    = etTraceOffset.text.toString().toFloatOrNull()   ?: 0.5f
+            )
+
+            val converter = GerberConverter(settings)
+            val result    = converter.convert(gerberText, currentFileName)
+
+            gcodeText = result.gcode
+            tvGcode.setText(gcodeText)
+            previewLines = ArrayList(result.previewLines)
+
+            tvStats.text = buildString {
+                if (result.isSvg) {
+                    appendLine("Format      : SVG")
+                    appendLine("Canvas      : ${"%.1f".format(result.svgScaledW)} x ${"%.1f".format(result.svgScaledH)} mm")
+                    appendLine("---")
+                }
+                appendLine("Traces      : ${result.stats.traces}")
+                appendLine("Flashes     : ${result.stats.flashes}")
+                append    ("G-code lines: ${result.stats.gcodeLines}")
+                linesGcode = result.stats.gcodeLines
+                traces     = result.stats.traces
+                flashes    = result.stats.flashes
+            }
+
+            previewView.updatePreview(result.previewLines)
+
+            cardFile.visibility    = View.GONE
+            cardSetting.visibility = View.GONE
+            cardPreview.visibility = View.VISIBLE
+            cardGcode.visibility   = View.GONE
+
+            scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
+            hideSendingOverlay()
+
+        } catch (e: Exception) {
+            hideSendingOverlay()
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+        }
+    }
+
+    // ── Save / Share / Print ──────────────────
+    private fun saveGcode() {
+        if (gcodeText.isEmpty()) {
+            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return
+        }
+        fileName = fileName.removeSuffix(".gbr").removeSuffix(".svg")
+        val ts = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+        createFileLauncher.launch("$fileName-$ts.gcode")
+    }
+
+    private fun shareGcode() {
+        if (gcodeText.isEmpty()) {
+            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return
+        }
+        try {
+            fileName = fileName.removeSuffix(".gbr").removeSuffix(".svg")
+            val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+            val out = File(cacheDir, "$fileName-$ts.gcode")
+            FileOutputStream(out).use { it.write(gcodeText.toByteArray()) }
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this, "$packageName.fileprovider", out
+            )
+            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }, "Share G-code"))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Gagal share: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun printGcode() {
+        if (gcodeText.isEmpty()) {
+            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return
+        }
+        if (stateMesin == "Running") {
+            Toast.makeText(this, "Printer sedang berjalan!", Toast.LENGTH_SHORT).show(); return
+        }
+        val target = if (isConnected) PrintActivity::class.java else PairingActivity::class.java
+        val printIntent = Intent(this, target).apply {
+            putParcelableArrayListExtra("preview_lines", previewLines)
+        }
+        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit()
+            .putString("GCODE_LINES", linesGcode.toString())
+            .putString("NAME_FILE",   fileName)
+            .putString("TRACES",      traces.toString())
+            .putString("FLASHES",     flashes.toString())
+            .apply()
+        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit()
+            .putString("EXTRA_GCODE", gcodeText)
+            .apply()
+        startActivity(printIntent)
+        finish()
+    }
+
+    // ── Aperture Info ─────────────────────────
     private fun showApertureInfo(text: String, fileName: String = "") {
         val isSvg = fileName.lowercase().endsWith(".svg")
                 || text.trimStart().startsWith("<svg")
                 || (text.trimStart().startsWith("<?xml") && text.contains("<svg", ignoreCase = true))
-
         if (isSvg) { showSvgInfo(text); return }
 
         val joined = text.replace("\r", "")
-        val fmtM = Regex("FSLAX(\\d)(\\d)Y(\\d)(\\d)").find(joined)
-        val xi   = fmtM?.groupValues?.get(1)?.toIntOrNull() ?: 2
-        val xd   = fmtM?.groupValues?.get(2)?.toIntOrNull() ?: 4
+        val fmtM   = Regex("FSLAX(\\d)(\\d)Y(\\d)(\\d)").find(joined)
+        val xi     = fmtM?.groupValues?.get(1)?.toIntOrNull() ?: 2
+        val xd     = fmtM?.groupValues?.get(2)?.toIntOrNull() ?: 4
 
-        val apRe = Regex("%ADD(\\d+)([A-Z]),([^*]+)\\*%")
-        val sbAp = StringBuilder()
+        val apRe   = Regex("%ADD(\\d+)([A-Z]),([^*]+)\\*%")
+        val sbAp   = StringBuilder()
         sbAp.appendLine("Format     : Gerber")
         var apCount = 0
 
@@ -253,7 +700,6 @@ class ConvertActivity : AppCompatActivity() {
             val type   = m.groupValues[2]
             val params = m.groupValues[3].split("X").mapNotNull { it.toFloatOrNull() }
             apCount++
-
             val desc = when (type) {
                 "C" -> {
                     val diam = params.getOrElse(0) { 0f }
@@ -283,48 +729,8 @@ class ConvertActivity : AppCompatActivity() {
         sbAp.appendLine("Flashes   : $flashCount")
         sbAp.appendLine("Traces    : $traceEst")
 
-        tvApertures.text = sbAp.toString().trimEnd()
+        tvApertures.text     = sbAp.toString().trimEnd()
         cardApertures.visibility = View.VISIBLE
-    }
-
-    private fun countOblongPads(joined: String, xi: Int, xd: Int): Int {
-        val apertures = mutableMapOf<String, Pair<String, Float>>()
-        val apRe = Regex("%ADD(\\d+)([A-Z]),([^*]+)\\*%")
-        for (m in apRe.findAll(joined)) {
-            val code   = "D${m.groupValues[1]}"
-            val type   = m.groupValues[2]
-            val diam   = m.groupValues[3].split("X").firstOrNull()?.toFloatOrNull() ?: 0f
-            apertures[code] = Pair(type, diam)
-        }
-
-        var curAp = ""
-        var curX  = 0f; var curY = 0f
-        var count = 0
-
-        for (rawLine in joined.split("\n")) {
-            val line = rawLine.trim()
-            val selM = Regex("^(D\\d{2,})\\*$").find(line)
-            if (selM != null && apertures.containsKey(selM.groupValues[1])) {
-                curAp = selM.groupValues[1]; continue
-            }
-            val coordM = Regex("^(?:X(-?\\d+))?(?:Y(-?\\d+))?(D0[123])\\*$").find(line) ?: continue
-            val nx = if (coordM.groupValues[1].isNotEmpty()) toMM(coordM.groupValues[1], xi, xd) else curX
-            val ny = if (coordM.groupValues[2].isNotEmpty()) toMM(coordM.groupValues[2], xi, xd) else curY
-            val op = coordM.groupValues[3]
-
-            if (op == "D02") { curX = nx; curY = ny }
-            else if (op == "D01") {
-                val ap = apertures[curAp]
-                if (ap != null) {
-                    val apType = ap.first; val apDiam = ap.second
-                    val segLen = sqrt((nx - curX) * (nx - curX) + (ny - curY) * (ny - curY))
-                    if (apType == "C" && abs(apDiam - 1.524f) < 0.01f && abs(segLen - apDiam) <= 0.01f)
-                        count++
-                }
-                curX = nx; curY = ny
-            }
-        }
-        return count
     }
 
     private fun showSvgInfo(text: String) {
@@ -339,14 +745,14 @@ class ConvertActivity : AppCompatActivity() {
         val vbRe    = Regex("""viewBox=["']([^"']+)["']""")
         val vbParts = vbRe.find(text)?.groupValues?.get(1)?.trim()
             ?.split(Regex("""[\s,]+"""))?.map { it.toFloatOrNull() ?: 0f }
-        val vbW = vbParts?.getOrElse(2) { 0f } ?: 0f
-        val vbH = vbParts?.getOrElse(3) { 0f } ?: 0f
-        val wRe = Regex("""width=["']([^"'px]+)""")
-        val hRe = Regex("""height=["']([^"'px]+)""")
-        val rawW = if (vbW > 0) vbW else wRe.find(text)?.groupValues?.get(1)?.toFloatOrNull() ?: 0f
-        val rawH = if (vbH > 0) vbH else hRe.find(text)?.groupValues?.get(1)?.toFloatOrNull() ?: 0f
+        val vbW  = vbParts?.getOrElse(2) { 0f } ?: 0f
+        val vbH  = vbParts?.getOrElse(3) { 0f } ?: 0f
+        val rawW = if (vbW > 0) vbW else Regex("""width=["']([^"'px]+)""")
+            .find(text)?.groupValues?.get(1)?.toFloatOrNull() ?: 0f
+        val rawH = if (vbH > 0) vbH else Regex("""height=["']([^"'px]+)""")
+            .find(text)?.groupValues?.get(1)?.toFloatOrNull() ?: 0f
 
-        val MAX_W = 200f; val MAX_H = 100f
+        val MAX_W   = 200f; val MAX_H = 100f
         val scale   = if (rawW > 0 && rawH > 0) kotlin.math.min(MAX_W / rawW, MAX_H / rawH) else 1f
         val scaledW = rawW * scale
         val scaledH = rawH * scale
@@ -368,8 +774,43 @@ class ConvertActivity : AppCompatActivity() {
         if (polygons  > 0) sb.appendLine("Polygon  : $polygons  -> trace")
         if (paths     > 0) sb.appendLine("Path     : $paths     -> trace (bezier/arc flatten)")
 
-        tvApertures.text = sb.toString().trimEnd()
+        tvApertures.text     = sb.toString().trimEnd()
         cardApertures.visibility = View.VISIBLE
+    }
+
+    private fun countOblongPads(joined: String, xi: Int, xd: Int): Int {
+        val apertures = mutableMapOf<String, Pair<String, Float>>()
+        val apRe = Regex("%ADD(\\d+)([A-Z]),([^*]+)\\*%")
+        for (m in apRe.findAll(joined)) {
+            val code = "D${m.groupValues[1]}"
+            val type = m.groupValues[2]
+            val diam = m.groupValues[3].split("X").firstOrNull()?.toFloatOrNull() ?: 0f
+            apertures[code] = Pair(type, diam)
+        }
+
+        var curAp = ""; var curX = 0f; var curY = 0f; var count = 0
+        for (rawLine in joined.split("\n")) {
+            val line  = rawLine.trim()
+            val selM  = Regex("^(D\\d{2,})\\*$").find(line)
+            if (selM != null && apertures.containsKey(selM.groupValues[1])) {
+                curAp = selM.groupValues[1]; continue
+            }
+            val coordM = Regex("^(?:X(-?\\d+))?(?:Y(-?\\d+))?(D0[123])\\*$").find(line) ?: continue
+            val nx = if (coordM.groupValues[1].isNotEmpty()) toMM(coordM.groupValues[1], xi, xd) else curX
+            val ny = if (coordM.groupValues[2].isNotEmpty()) toMM(coordM.groupValues[2], xi, xd) else curY
+            val op = coordM.groupValues[3]
+            if (op == "D02") { curX = nx; curY = ny }
+            else if (op == "D01") {
+                val ap = apertures[curAp]
+                if (ap != null) {
+                    val segLen = sqrt((nx - curX) * (nx - curX) + (ny - curY) * (ny - curY))
+                    if (ap.first == "C" && abs(ap.second - 1.524f) < 0.01f && abs(segLen - ap.second) <= 0.01f)
+                        count++
+                }
+                curX = nx; curY = ny
+            }
+        }
+        return count
     }
 
     private fun toMM(s: String, xi: Int, xd: Int): Float {
@@ -380,124 +821,29 @@ class ConvertActivity : AppCompatActivity() {
         return if (neg) -v else v
     }
 
-    // ── Convert ──
-    private fun convertToGcode() {
-        gerberText = etGerber.text.toString()
-        if (gerberText.isBlank()) {
-            hideSendingOverlay()
-            Toast.makeText(this, "Load file terlebih dahulu!", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        try {
-            val settings = Settings(
-                penWidth = etPenWidth.text.toString().toFloatOrNull() ?: 0.5f,
-                feedrate = etFeedRate.text.toString().toIntOrNull()   ?: 60,
-                circlePasses = etCirclePasses.text.toString().toIntOrNull()   ?: 2,
-                circleOffset = etCircleOffset.text.toString().toFloatOrNull() ?: 0.25f,
-                traceMultiPass = switchMultiPass.isChecked,
-                traceOffset = etTraceOffset.text.toString().toFloatOrNull() ?: 0.5f
-            )
-
-            val converter = GerberConverter(settings)
-            val result    = converter.convert(gerberText, currentFileName)
-
-            gcodeText = result.gcode
-            tvGcode.setText(gcodeText)
-
-            // SIMPAN HASIL GARIS KE VARIABEL CLASS
-            previewLines = ArrayList(result.previewLines)
-
-            tvStats.text = buildString {
-                if (result.isSvg) {
-                    appendLine("Format      : SVG")
-                    appendLine("Canvas      : ${"%.1f".format(result.svgScaledW)} x ${"%.1f".format(result.svgScaledH)} mm")
-                    appendLine("---")
-                }
-                appendLine("Traces      : ${result.stats.traces}")
-                appendLine("Flashes     : ${result.stats.flashes}")
-                append    ("G-code lines: ${result.stats.gcodeLines}")
-                linesGcode = result.stats.gcodeLines
-                traces = result.stats.traces
-                flashes = result.stats.flashes
-            }
-
-            previewView.updatePreview(result.previewLines)
-
-            cardFile.visibility    = View.GONE
-            cardSetting.visibility = View.GONE
-            cardPreview.visibility = View.VISIBLE
-            cardGcode.visibility   = View.GONE
-
-            scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
-            hideSendingOverlay()
-
-        } catch (e: Exception) {
-            hideSendingOverlay()
-            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-            e.printStackTrace()
+    // ── Overlay ───────────────────────────────
+    private fun showSendingOverlay(message: String) {
+        runOnUiThread {
+            sendingStatusText.text    = message
+            sendingOverlay.visibility = View.VISIBLE
         }
     }
 
-    private fun saveGcode() {
-
-        if (gcodeText.isEmpty()) {
-            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if(fileName.substringAfterLast('.', "").lowercase() == "gbr") {
-            fileName = fileName.removeSuffix(".gbr")
-        } else {
-            fileName = fileName.removeSuffix(".svg")
-        }
-
-        val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
-
-        val suggestedName = "$fileName-$ts.gcode"
-
-        createFileLauncher.launch(suggestedName)
+    private fun updateSendingOverlayText(message: String) {
+        runOnUiThread { sendingStatusText.text = message }
     }
 
-    private fun shareGcode() {
-        if (gcodeText.isEmpty()) { Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return }
-        try {
-            if(fileName.substringAfterLast('.', "").lowercase() == "gbr") {
-                fileName = fileName.removeSuffix(".gbr")
-            } else fileName = fileName.removeSuffix(".svg")
-            val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
-            val out = File(cacheDir, "$fileName-$ts.gcode")
-            FileOutputStream(out).use { it.write(gcodeText.toByteArray()) }
-            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", out)
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }, "Share G-code"))
-        } catch (e: Exception) { Toast.makeText(this, "Gagal share: ${e.message}", Toast.LENGTH_LONG).show() }
+    private fun hideSendingOverlay() {
+        runOnUiThread { sendingOverlay.visibility = View.GONE }
     }
 
-    private fun printGcode() {
-        if (gcodeText.isEmpty()) {
-            Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return
+    // ── File Utils ────────────────────────────
+    private fun openFilePicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
         }
-        if (stateMesin == "Running") {
-            Toast.makeText(this, "Printer sedang berjalan!", Toast.LENGTH_SHORT).show(); return
-        }
-        
-        val target = if (isConnected) PrintActivity::class.java else PairingActivity::class.java
-        val printIntent = Intent(this, target).apply {
-            putParcelableArrayListExtra("preview_lines", previewLines)
-        }
-
-        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("GCODE_LINES", linesGcode.toString()).apply()
-        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().putString("EXTRA_GCODE", gcodeText).apply()
-        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("NAME_FILE", fileName).apply()
-        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("TRACES", traces.toString()).apply()
-        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit().putString("FLASHES", flashes.toString()).apply()
-        
-        startActivity(printIntent)
-        finish()
+        gerberPickerLauncher.launch(intent)
     }
 
     private fun readFileFromUri(uri: Uri): String =
@@ -519,23 +865,6 @@ class ConvertActivity : AppCompatActivity() {
             if (cut != null && cut != -1) result = result?.substring(cut + 1)
         }
         return result ?: "Unknown File"
-    }
-
-    private fun showSendingOverlay(message: String) {
-        runOnUiThread {
-            sendingStatusText.text    = message
-            sendingOverlay.visibility = View.VISIBLE
-        }
-    }
-
-    private fun updateSendingOverlayText(message: String) {
-        runOnUiThread { sendingStatusText.text = message }
-    }
-
-    private fun hideSendingOverlay() {
-        runOnUiThread {
-            sendingOverlay.visibility = View.GONE
-        }
     }
 }
 

@@ -165,9 +165,6 @@ class PrintActivity : BaseActivity() {
                     val safeProgress = progress.coerceIn(0, 100)
                     val isPrint    = snapshot.child("isPrinting").getValue(Boolean::class.java) ?: false
 
-//                    progressBar.progress = safeProgress
-//                    progressText.text    = "$safeProgress%"
-
                     if (wasPrinting && !isPrint) {
                         val intent = Intent(this@PrintActivity, AnalyticsActivity::class.java)
                         val totalLines = gcodeContent.split("\n").filter { it.isNotBlank() }.size
@@ -230,7 +227,8 @@ class PrintActivity : BaseActivity() {
             } else {
                 "${namaFile ?: "print"}$timeSuffix.gcode"
             }
-            uploadToFirebaseStorage()
+            showSendingOverlay("Process...")
+            uploadToRealtimeDatabbase()
         }
 
         // Tombol Cancel
@@ -278,7 +276,7 @@ class PrintActivity : BaseActivity() {
             }
             .addOnSuccessListener {
                 // Upload storage berhasil → simpan ke database
-                sendFileNameAndWaitDevice()
+                WaitDevice()
             }
             .addOnFailureListener { e ->
                 Log.e("STORAGE", "Upload gagal: ${e.message}")
@@ -286,40 +284,58 @@ class PrintActivity : BaseActivity() {
             }
     }
 
-    // ─── Kirim fileName + sendingState, lalu tunggu device ──────────────────
+    private fun uploadToRealtimeDatabbase() {
+        val baseRef = FirebaseDatabase.getInstance()
+            .reference
+            .child("deviceAddress")
+            .child(alamatDevice)
 
-    private fun sendFileNameAndWaitDevice() {
+        val lines = gcodeContent
+            .split("\n")
+            .map {it.trim()}
+            .filter { it.isNotEmpty() }
+
+        val chunkSize = 10
+        val chunks = lines.chunked(chunkSize)
+
+        val updates = HashMap<String, Any>()
+
+        updates["fileName"] = fileName
+        updates["totalLines"] = lines.size
+        updates["totalChunk"] = chunks.size
+
+        chunks.forEachIndexed { index, chunk ->
+            val combined = chunk.joinToString("\n")
+            updates["gcodeFile/$index"] = combined
+        }
+
+        baseRef.updateChildren(updates)
+            .addOnSuccessListener {
+                Log.d("DB", "Upload Berhasil")
+                WaitDevice()
+            }
+            .addOnFailureListener {
+                Log.e("DB", "Upload Gagal: ${it.message}")
+                Toast.makeText(this, "Upload Gagal: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun WaitDevice() {
         val deviceRef = FirebaseDatabase.getInstance()
             .reference
             .child("deviceAddress")
             .child(alamatDevice)
 
-        // Tampilkan overlay spinner "Menunggu device..."
-        showSendingOverlay("Mengirim ke device...")
-
-        deviceRef.child("fileName").setValue(fileName)
+        deviceRef.child("sendingState").setValue(true)
             .addOnSuccessListener {
-                deviceRef.child("sendingState").setValue(true)
-                    .addOnSuccessListener {
-                        updateSendingOverlayText("Menunggu device siap...")
-                        waitForDeviceReady(deviceRef)
-                    }
-                    .addOnFailureListener { e ->
-                        hideSendingOverlay()
-                        Toast.makeText(this, "Gagal kirim sendingState: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                updateSendingOverlayText("Waiting device ....")
+                waitForDeviceReady(deviceRef)
             }
             .addOnFailureListener { e ->
                 hideSendingOverlay()
-                Toast.makeText(this, "Gagal kirim fileName: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Gagal kirim sendingState: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
-
-    /**
-     * Pasang listener realtime yang menunggu kondisi:
-     *   sendingState == false  DAN  isPrinting == true
-     * Ketika terpenuhi → lepas listener dan update UI ke mode "sedang print".
-     */
     private fun waitForDeviceReady(deviceRef: com.google.firebase.database.DatabaseReference) {
         sendingStateListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -327,7 +343,6 @@ class PrintActivity : BaseActivity() {
                 val isPrinting   = snapshot.child("isPrinting").getValue(Boolean::class.java) ?: false
 
                 if (!sendingState && isPrinting) {
-                    // Device sudah menerima file dan mulai print
                     removeSendingStateListener()
                     hideSendingOverlay()
                     onDeviceStartedPrinting()
@@ -339,11 +354,9 @@ class PrintActivity : BaseActivity() {
                 hideSendingOverlay()
             }
         }
-
         deviceRef.addValueEventListener(sendingStateListener!!)
     }
 
-    /** Dipanggil setelah device konfirmasi mulai print */
     private fun onDeviceStartedPrinting() {
         runOnUiThread {
             gerberCard.visibility     = View.GONE
@@ -356,8 +369,6 @@ class PrintActivity : BaseActivity() {
             Toast.makeText(this, "Print dimulai!", Toast.LENGTH_SHORT).show()
         }
     }
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private fun removeSendingStateListener() {
         sendingStateListener?.let { listener ->
@@ -374,7 +385,7 @@ class PrintActivity : BaseActivity() {
         runOnUiThread {
             sendingStatusText.text    = message
             sendingOverlay.visibility = View.VISIBLE
-            // Sembunyikan tombol agar tidak bisa ditekan saat menunggu
+
             btnPrint.visibility     = View.GONE
             btnCancelPrint.visibility = View.GONE
         }
