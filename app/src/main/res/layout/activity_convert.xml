@@ -252,6 +252,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:visibility="gone"
                             android:orientation="vertical"
                             android:paddingStart="4dp">
 
@@ -279,6 +280,7 @@
                                 android:textColor="#94A3B8"
                                 android:textSize="10sp" />
                         </LinearLayout>
+
                     </LinearLayout>
 
                     <!-- Divider -->
@@ -479,7 +481,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:visibility="visible"
+                android:visibility="gone"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp">
 

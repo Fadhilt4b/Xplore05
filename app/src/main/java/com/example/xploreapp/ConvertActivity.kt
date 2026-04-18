@@ -24,6 +24,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import com.google.gson.Gson
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
 import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialDriver
@@ -92,6 +93,8 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
     private var linesGcode      = 0
     private var previewLines    = ArrayList<PreviewLine>()
 
+    private var file = File("")
+    private var preview = File("")
     enum class Mode {
         HEARTBEAT,
         GCODE
@@ -200,7 +203,7 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         if (result.resultCode != RESULT_OK || result.data?.data == null) return@registerForActivityResult
         val uri  = result.data!!.data!!
         fileName = getFileName(uri)
-        val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+        val ts  = SimpleDateFormat("HHmmss", Locale.getDefault()).format(Date())
         fileNameSerial = fileName.removeSuffix(".gbr").removeSuffix(".svg")
         fileNameSerial = "$fileNameSerial-$ts.gcode"
         val ext  = fileName.substringAfterLast('.', "").lowercase()
@@ -213,6 +216,7 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         tvGerber.text   = fileName
         etGerber.setText(gerberText)
         showApertureInfo(gerberText, fileName)
+        scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
     }
 
     // ═══════════════════════════════════════════
@@ -577,7 +581,7 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         try {
             val settings = Settings(
                 penWidth       = etPenWidth.text.toString().toFloatOrNull()     ?: 0.5f,
-                feedrate       = etFeedRate.text.toString().toIntOrNull()        ?: 60,
+                feedrate       = 80,
                 circlePasses   = etCirclePasses.text.toString().toIntOrNull()    ?: 2,
                 circleOffset   = etCircleOffset.text.toString().toFloatOrNull()  ?: 0.25f,
                 traceMultiPass = switchMultiPass.isChecked,
@@ -590,6 +594,12 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             gcodeText = result.gcode
             tvGcode.setText(gcodeText)
             previewLines = ArrayList(result.previewLines)
+
+            file = File(filesDir, "current_job.gcode")
+            file.writeText(gcodeText)
+
+            preview = File(filesDir, "current_preview.jsson")
+            preview.writeText(Gson().toJson(previewLines))
 
             tvStats.text = buildString {
                 if (result.isSvg) {
@@ -628,7 +638,7 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
             Toast.makeText(this, "Tidak ada G-code!", Toast.LENGTH_SHORT).show(); return
         }
         fileName = fileName.removeSuffix(".gbr").removeSuffix(".svg")
-        val ts = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+        val ts = SimpleDateFormat("HHmmss", Locale.getDefault()).format(Date())
         createFileLauncher.launch("$fileName-$ts.gcode")
     }
 
@@ -638,7 +648,7 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         }
         try {
             fileName = fileName.removeSuffix(".gbr").removeSuffix(".svg")
-            val ts  = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault()).format(Date())
+            val ts  = SimpleDateFormat("HHmmss", Locale.getDefault()).format(Date())
             val out = File(cacheDir, "$fileName-$ts.gcode")
             FileOutputStream(out).use { it.write(gcodeText.toByteArray()) }
             val uri = androidx.core.content.FileProvider.getUriForFile(
@@ -663,16 +673,15 @@ class ConvertActivity : AppCompatActivity(), SerialInputOutputManager.Listener {
         }
         val target = if (isConnected) PrintActivity::class.java else PairingActivity::class.java
         val printIntent = Intent(this, target).apply {
-            putParcelableArrayListExtra("preview_lines", previewLines)
+            putExtra("filePath", file.absolutePath)
         }
-        getSharedPreferences("APP_REFF", MODE_PRIVATE).edit()
+
+        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit()
             .putString("GCODE_LINES", linesGcode.toString())
             .putString("NAME_FILE",   fileName)
             .putString("TRACES",      traces.toString())
             .putString("FLASHES",     flashes.toString())
-            .apply()
-        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit()
-            .putString("EXTRA_GCODE", gcodeText)
+            .putString("GCODE_PATH", file.absolutePath)
             .apply()
         startActivity(printIntent)
         finish()

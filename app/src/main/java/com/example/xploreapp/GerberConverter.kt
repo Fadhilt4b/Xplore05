@@ -406,7 +406,7 @@ class GerberConverter(private val settings: Settings) {
             genTrace(obj, penW, F, lines, lastX, lastY, needMove, updatePos) // ✓
         }
 
-        lines += "G00 X0.000 Y0.000"
+        lines += "G00 X0.000 Y95.000"
 
         val gcodeText = lines.joinToString("\n")
         return ConversionResult(
@@ -424,14 +424,15 @@ class GerberConverter(private val settings: Settings) {
     private fun genCircleFlash(obj: FlashObj, F: Int, out: MutableList<String>) {
         val r = obj.apParams[0] / 2f
         if (obj.isOblong) {
-            listOf(r + CIRCLE_OFFSET, r, r - CIRCLE_OFFSET).forEach { ri ->
-                if (ri > 0f) drawCircleG02(obj.x, obj.y, ri, F, out)
+            val radii = listOf(r + CIRCLE_OFFSET, r, r - CIRCLE_OFFSET)
+            radii.forEachIndexed { index, ri ->
+                if (ri > 0f) drawCircleG02(obj.x, obj.y, ri, F, out, isFirstPass = index == 0)
             }
         } else {
             for (i in 0 until CIRCLE_PASSES) {
                 val ri = r - i * CIRCLE_OFFSET
                 if (ri <= 0f) break
-                drawCircleG02(obj.x, obj.y, ri, F, out)
+                drawCircleG02(obj.x, obj.y, ri, F, out, isFirstPass = i == 0)
             }
         }
     }
@@ -445,25 +446,27 @@ class GerberConverter(private val settings: Settings) {
         val r = obj.apParams[0] / 2f
         for (i in 0 until CIRCLE_PASSES) {
             val ri = r - i * CIRCLE_OFFSET; if (ri <= 0f) break
-            drawCircleG02(obj.x, obj.y, ri, F, out)
+            drawCircleG02(obj.x, obj.y, ri, F, out, isFirstPass = i == 0)
         }
     }
 
-    private fun drawCircleG02(cx: Float, cy: Float, r: Float, F: Int, out: MutableList<String>) {
+    private fun drawCircleG02(cx: Float, cy: Float, r: Float, F: Int, out: MutableList<String>, isFirstPass: Boolean = true) {
         val sx = cx - r
-        out += "G00 X${f3(sx)} Y${f3(cy)}"
-        out += "G02 X${f3(sx)} Y${f3(cy)} I${f4(r)} J0.0000 F$F"
+        if(isFirstPass) out += "G00 X${f3(sx)} Y${f3(cy)}"
+        else out += "G01 X${f3(sx)} Y${f3(cy)}"
+        out += "G02 X${f3(sx)} Y${f3(cy)} I${f4(r)} J0.0000"
     }
 
+    //F$F
     private fun zigzag(x0: Float, y0: Float, x1: Float, y1: Float, penW: Float, F: Int, out: MutableList<String>) {
         out += "G00 X${f3(x0)} Y${f3(y0)}"
-        out += "G01 X${f3(x0)} Y${f3(y0)} F$F"
+        out += "G01 X${f3(x0)} Y${f3(y0)}"
         var y = y0; var row = 0
         while (roundF(y) <= roundF(y1)) {
             val xe = if (row % 2 == 0) x1 else x0
-            out += "G01 X${f3(xe)} Y${f3(y)} F$F"
+            out += "G01 X${f3(xe)} Y${f3(y)}"
             val ny = roundF(y + penW)
-            if (ny <= roundF(y1)) out += "G01 X${f3(xe)} Y${f3(ny)} F$F"
+            if (ny <= roundF(y1)) out += "G01 X${f3(xe)} Y${f3(ny)}"
             y = ny; row++
         }
     }
@@ -478,7 +481,7 @@ class GerberConverter(private val settings: Settings) {
         val passes = maxOf(1, round(w / penW).toInt())
         if (passes <= 1 || !TRACE_MULTIPASS) {
             if (needMove(obj.x1, obj.y1)) out += "G00 X${f3(obj.x1)} Y${f3(obj.y1)}" // ✓ skip redundant
-            out += "G01 X${f3(obj.x2)} Y${f3(obj.y2)} F$F"
+            out += "G01 X${f3(obj.x2)} Y${f3(obj.y2)}"
             updatePos(obj.x2, obj.y2)
             return
         }
@@ -491,42 +494,44 @@ class GerberConverter(private val settings: Settings) {
             val px1=obj.x1+nx*off; val py1=obj.y1+ny*off
             val px2=obj.x2+nx*off; val py2=obj.y2+ny*off
             out += "G00 X${f3(px1)} Y${f3(py1)}"
-            out += "G01 X${f3(px1)} Y${f3(py1)} F$F"
-            out += "G01 X${f3(px2)} Y${f3(py2)} F$F"
+            out += "G01 X${f3(px1)} Y${f3(py1)}"
+            out += "G01 X${f3(px2)} Y${f3(py2)}"
         }
     }
 
-    private fun parseGcodeToPreview(gcode: String): List<PreviewLine> {
-        val result = mutableListOf<PreviewLine>()
-        var curX = 0f; var curY = 0f
-        val xRe = Regex("X([-.\\d]+)"); val yRe = Regex("Y([-.\\d]+)"); val iRe = Regex("I([-.\\d]+)")
-        for (raw in gcode.split("\n")) {
-            val t  = raw.trim()
-            val nx = xRe.find(t)?.groupValues?.get(1)?.toFloatOrNull()
-            val ny = yRe.find(t)?.groupValues?.get(1)?.toFloatOrNull()
-            when {
-                t.startsWith("G00") -> {
-                    val tx=nx?:curX; val ty=ny?:curY
-                    if (tx!=curX||ty!=curY) result.add(PreviewLine(curX,curY,tx,ty,true))
-                    curX=tx; curY=ty
-                }
-                t.startsWith("G01") -> {
-                    val tx=nx?:curX; val ty=ny?:curY
-                    if (tx!=curX||ty!=curY) result.add(PreviewLine(curX,curY,tx,ty,false))
-                    curX=tx; curY=ty
-                }
-                t.startsWith("G02") -> {
-                    val iVal=iRe.find(t)?.groupValues?.get(1)?.toFloatOrNull()?:0f
-                    val r=abs(iVal); val ccx=curX+iVal; var px=curX; var py=curY
-                    for (i in 1..36) {
-                        val angle=PI*2*i/36
-                        val ex=(ccx-r* cos(angle)).toFloat(); val ey=(curY-r* sin(angle)).toFloat()
-                        result.add(PreviewLine(px,py,ex,ey,false)); px=ex; py=ey
+    companion object{
+        fun parseGcodeToPreview(gcode: String): List<PreviewLine> {
+            val result = mutableListOf<PreviewLine>()
+            var curX = 0f; var curY = 0f
+            val xRe = Regex("X([-.\\d]+)"); val yRe = Regex("Y([-.\\d]+)"); val iRe = Regex("I([-.\\d]+)")
+            for (raw in gcode.split("\n")) {
+                val t  = raw.trim()
+                val nx = xRe.find(t)?.groupValues?.get(1)?.toFloatOrNull()
+                val ny = yRe.find(t)?.groupValues?.get(1)?.toFloatOrNull()
+                when {
+                    t.startsWith("G00") -> {
+                        val tx=nx?:curX; val ty=ny?:curY
+                        if (tx!=curX||ty!=curY) result.add(PreviewLine(curX,curY,tx,ty,true))
+                        curX=tx; curY=ty
+                    }
+                    t.startsWith("G01") -> {
+                        val tx=nx?:curX; val ty=ny?:curY
+                        if (tx!=curX||ty!=curY) result.add(PreviewLine(curX,curY,tx,ty,false))
+                        curX=tx; curY=ty
+                    }
+                    t.startsWith("G02") -> {
+                        val iVal=iRe.find(t)?.groupValues?.get(1)?.toFloatOrNull()?:0f
+                        val r=abs(iVal); val ccx=curX+iVal; var px=curX; var py=curY
+                        for (i in 1..36) {
+                            val angle=PI*2*i/36
+                            val ex=(ccx-r * cos(angle)).toFloat(); val ey=(curY-r* sin(angle)).toFloat()
+                            result.add(PreviewLine(px,py,ex,ey,false)); px=ex; py=ey
+                        }
                     }
                 }
             }
+            return result
         }
-        return result
     }
 
     private fun f3(v: Float) = "%.3f".format(v)

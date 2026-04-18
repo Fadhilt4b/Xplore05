@@ -15,8 +15,12 @@ class AnalyticsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_analytics)
 
-        window.statusBarColor = getColor(R.color.abu_abu)
-        window.navigationBarColor = getColor(R.color.white)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            @Suppress("DEPRECATION")
+            window.statusBarColor    = getColor(R.color.abu_abu)
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = getColor(R.color.abu_abu)
+        }
 
         // Bind Views
         val tvJobName = findViewById<TextView>(R.id.tv_job_name)
@@ -57,9 +61,8 @@ class AnalyticsActivity : AppCompatActivity() {
 
         btnReturnHome.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
-            finish()
         }
     }
 }

@@ -22,6 +22,12 @@ class PairingActivity : BaseActivity() {
     private lateinit var address: EditText
     private lateinit var btnConnect: CardView
 
+    private var lines: String? = ""
+    private var gcodepath: String? = ""
+    private var traces: String? = ""
+    private var flashes: String? = ""
+    private var namaFile: String? = ""
+
     private val scanLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -34,8 +40,12 @@ class PairingActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pairing)
 
-        window.statusBarColor = getColor(R.color.abu_abu)
-        window.navigationBarColor = getColor(R.color.abu_abu)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            @Suppress("DEPRECATION")
+            window.statusBarColor    = getColor(R.color.abu_abu)
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = getColor(R.color.abu_abu)
+        }
 
         btnBack = findViewById(R.id.btnBack)
         btnScan = findViewById(R.id.btnScan)
@@ -44,6 +54,31 @@ class PairingActivity : BaseActivity() {
 
         val database = FirebaseDatabase.getInstance()
         val ref = database.getReference("deviceAddress")
+
+        val prefs = getSharedPreferences("APP_PREF", MODE_PRIVATE)
+        traces   = prefs.getString("TRACES", null)
+        flashes  = prefs.getString("FLASHES", null)
+        lines    = prefs.getString("GCODE_LINES", null)
+        namaFile = prefs.getString("NAME_FILE", null)
+
+        gcodepath   = intent.getStringExtra("filePath")
+
+        val fromIntent = intent.hasExtra("filePath")
+        if(!fromIntent) {
+
+            traces = null
+            flashes = null
+            lines = null
+            namaFile = null
+
+            prefs.edit()
+                .remove("GCODE_PATH")
+                .remove("NAME_FILE")
+                .remove("TRACES")
+                .remove("FLASHES")
+                .remove("GCODE_LINES")
+                .apply()
+        }
 
         btnBack.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
@@ -90,8 +125,19 @@ class PairingActivity : BaseActivity() {
                                 .addOnSuccessListener {
                                     hideLoading()
                                     Log.d("FIREBASE", "deviceConnected value updated to true")
-                                    val intent = Intent(this, PrintActivity::class.java)
-                                    startActivity(intent)
+                                    val printIntent = Intent(this, PrintActivity::class.java).apply {
+                                        putExtra("filePath", gcodepath)
+                                    }
+
+                                    getSharedPreferences("APP_PREF", MODE_PRIVATE).edit()
+                                        .putString("GCODE_LINES", lines.toString())
+                                        .putString("NAME_FILE",   namaFile)
+                                        .putString("TRACES",      traces.toString())
+                                        .putString("FLASHES",     flashes.toString())
+                                        .putString("GCODE_PATH", gcodepath)
+                                        .apply()
+
+                                    startActivity(printIntent)
                                     finish()
                                 }
                                 .addOnFailureListener {

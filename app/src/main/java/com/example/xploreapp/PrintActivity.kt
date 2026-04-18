@@ -11,14 +11,23 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Dispatcher
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,6 +67,8 @@ class PrintActivity : BaseActivity() {
     private val PICK_GCODE = 1001
 
     private var lines: String? = ""
+    private var gcodepath: String? = ""
+    private var previewPath: String? = ""
 
     private var traces: String? = ""
 
@@ -70,8 +81,12 @@ class PrintActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_print)
 
-        window.statusBarColor = getColor(R.color.abu_abu)
-        window.navigationBarColor = getColor(R.color.abu_abu)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            @Suppress("DEPRECATION")
+            window.statusBarColor    = getColor(R.color.abu_abu)
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = getColor(R.color.abu_abu)
+        }
 
         // Init semua view
         btnBack          = findViewById(R.id.btnBack)
@@ -93,13 +108,31 @@ class PrintActivity : BaseActivity() {
         // Sembunyikan overlay di awal
         sendingOverlay.visibility = View.GONE
 
-
         //ngambil data conversion stats dari SharedPreferences
-        val prefsReff = getSharedPreferences("APP_REFF", MODE_PRIVATE)
-        traces = prefsReff.getString("TRACES", null)
-        flashes = prefsReff.getString("FLASHES", null)
-        lines = prefsReff.getString("GCODE_LINES", null)
-        namaFile = prefsReff.getString("NAME_FILE", null)
+        val prefs = getSharedPreferences("APP_PREF", MODE_PRIVATE)
+        traces   = prefs.getString("TRACES", null)
+        flashes  = prefs.getString("FLASHES", null)
+        lines    = prefs.getString("GCODE_LINES", null)
+        namaFile = prefs.getString("NAME_FILE", null)
+
+        gcodepath   = intent.getStringExtra("filePath")
+
+        val fromIntent = intent.hasExtra("filePath")
+        if(!fromIntent) {
+
+            traces = null
+            flashes = null
+            lines = null
+            namaFile = null
+
+            prefs.edit()
+                .remove("GCODE_PATH")
+                .remove("NAME_FILE")
+                .remove("TRACES")
+                .remove("FLASHES")
+                .remove("GCODE_LINES")
+                .apply()
+        }
 
         if (traces != null || flashes != null || lines != null) {
             tvStats.text = buildString {
@@ -113,33 +146,23 @@ class PrintActivity : BaseActivity() {
 
         btnPickGcode.setOnClickListener { openGcodePicker() }
 
-
-        //Ambil data gamabr intent
-        val previewData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+
-            intent.getParcelableArrayListExtra("preview_lines", PreviewLine::class.java)
-        } else {
-            // Android 12 ke bawah
-            @Suppress("DEPRECATION")
-            intent.getParcelableArrayListExtra<PreviewLine>("preview_lines")
+        if (gcodepath == null) {
+            gcodepath = prefs.getString("GCODE_PATH", null)
         }
 
-        // Ambil G-code dari SharedPreferences
-        val savedGcode = getSharedPreferences("APP_PREF", MODE_PRIVATE).getString("EXTRA_GCODE", null)
-        if (!savedGcode.isNullOrEmpty()) {
-            etGcode.setText(savedGcode)
-            gcodeContent = savedGcode
-        }
+        if(gcodepath != null) {
+            var fileGcode = File(gcodepath).readText()
+            etGcode.setText(fileGcode)
+            gcodeContent = fileGcode
 
-        if (previewData != null) {
-            // Gunakan .post agar dipastikan view sudah siap ukurannya sebelum menggambar
-            previewView.post {
-                previewView.updatePreview(previewData)
+            lifecycleScope.launch(Dispatchers.IO) {
+                val prev = GerberConverter.parseGcodeToPreview(gcodeContent)
+                withContext(Dispatchers.Main) {
+                    previewView.post {
+                        previewView.updatePreview(prev)
+                    }
+                }
             }
-        } else if (!savedGcode.isNullOrEmpty()) {
-            // Fallback: Jika data intent kosong, baru ambil dari G-code SharedPreferences
-            val result = GerberConverter(Settings()).convert(savedGcode)
-            previewView.post { previewView.updatePreview(result.previewLines) }
         }
 
         // Ambil alamat device
@@ -183,8 +206,8 @@ class PrintActivity : BaseActivity() {
                     }
 
                     wasPrinting = isPrint
+                    progressText.text    = "$safeProgress%"
                     progressBar.progress = safeProgress
-                    progressText.text    = "$safeProgress"
 
                         if (isPrint) {
                         gerberCard.visibility     = View.GONE
@@ -225,7 +248,7 @@ class PrintActivity : BaseActivity() {
             fileName = if (isFromPicker) {
                 fileName.removeSuffix(".gcode") + "-$timeSuffix.gcode"
             } else {
-                "${namaFile ?: "print"}$timeSuffix.gcode"
+                "${namaFile?.removeSuffix(".gbr") ?: "print"}-$timeSuffix.gcode"
             }
             showSendingOverlay("Process...")
             uploadToRealtimeDatabbase()
@@ -260,29 +283,29 @@ class PrintActivity : BaseActivity() {
         onBackPressedDispatcher.addCallback(this) { navigateToMain() }
     }
 
-    private fun uploadToFirebaseStorage() {
-        val storagePath = "$alamatDevice/$fileName"
-        val storageRef  = FirebaseStorage.getInstance()
-            .reference
-            .child(storagePath)
-
-        val fileBytes = gcodeContent.toByteArray(Charsets.UTF_8)
-
-        storageRef.putBytes(fileBytes)
-            .addOnProgressListener { taskSnapshot ->
-                // Opsional: tampilkan progress upload di UI jika mau
-                val uploadProgress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-                Log.d("STORAGE", "Upload progress: $uploadProgress%")
-            }
-            .addOnSuccessListener {
-                // Upload storage berhasil → simpan ke database
-                WaitDevice()
-            }
-            .addOnFailureListener { e ->
-                Log.e("STORAGE", "Upload gagal: ${e.message}")
-                Toast.makeText(this, "Upload gagal: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
+//    private fun uploadToFirebaseStorage() {
+//        val storagePath = "$alamatDevice/$fileName"
+//        val storageRef  = FirebaseStorage.getInstance()
+//            .reference
+//            .child(storagePath)
+//
+//        val fileBytes = gcodeContent.toByteArray(Charsets.UTF_8)
+//
+//        storageRef.putBytes(fileBytes)
+//            .addOnProgressListener { taskSnapshot ->
+//                // Opsional: tampilkan progress upload di UI jika mau
+//                val uploadProgress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+//                Log.d("STORAGE", "Upload progress: $uploadProgress%")
+//            }
+//            .addOnSuccessListener {
+//                // Upload storage berhasil → simpan ke database
+//                WaitDevice()
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("STORAGE", "Upload gagal: ${e.message}")
+//                Toast.makeText(this, "Upload gagal: ${e.message}", Toast.LENGTH_SHORT).show()
+//            }
+//    }
 
     private fun uploadToRealtimeDatabbase() {
         val baseRef = FirebaseDatabase.getInstance()
@@ -336,6 +359,7 @@ class PrintActivity : BaseActivity() {
                 Toast.makeText(this, "Gagal kirim sendingState: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
+
     private fun waitForDeviceReady(deviceRef: com.google.firebase.database.DatabaseReference) {
         sendingStateListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -460,6 +484,15 @@ class PrintActivity : BaseActivity() {
             append    ("Status      : Manual Load")
         }
         fileSelected.text = fileName
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val prev = GerberConverter.parseGcodeToPreview(gcodeContent)
+            withContext(Dispatchers.Main) {
+                previewView.post {
+                    previewView.updatePreview(prev)
+                }
+            }
+        }
     }
 
     private fun getFileName(uri: Uri): String {
@@ -473,7 +506,7 @@ class PrintActivity : BaseActivity() {
     }
 
     private fun generateTimeSuffix(): String {
-        val sdf = SimpleDateFormat("ddMMyy_HHmm", Locale.getDefault())
+        val sdf = SimpleDateFormat("HHmmss", Locale.getDefault())
         return sdf.format(Date())
     }
 
