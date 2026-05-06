@@ -1,292 +1,312 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/abu_abu"
-    android:padding="24dp"
-    tools:context=".AnalyticsActivity">
+    android:fillViewport="true">
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/card_analytics"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="24dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_return_home"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.4"
-        app:layout_constraintVertical_chainStyle="packed">
+        android:padding="20dp">
 
-        <LinearLayout
+        <!-- Header Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="26dp">
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
-                android:fontFamily="@font/poppinmedium"
-                android:gravity="center"
-                android:text="Print Job Completed"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
+            android:layout_marginTop="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toTopOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppinsbold"
+                    android:text="Result &amp; Analytics"
+                    android:textColor="@color/black"
+                    android:textSize="18sp" />
 
                 <TextView
                     android:id="@+id/tv_job_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Job Name : -"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_total_lines"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Total Lines : 0"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_print_time"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Print Time : 00:00"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    android:layout_marginTop="15dp"
+                    android:paddingStart="20dp"
+                    android:background="@drawable/gradient_cyan_bg"
+                    android:fontFamily="@font/poppinsbold"
+                    android:padding="12dp"
+                    android:text="PCB_TEST_A"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
             </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_marginTop="14dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
+        <!-- Latency Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_latency"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="6dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:layout_constraintEnd_toStartOf="@+id/card_total_lines"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/card_header">
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="vertical">
+                android:padding="16dp">
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:id="@+id/lbl_latency"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Communication Performance"
+                    android:fontFamily="@font/poppinsbold"
+                    android:text="Latency"
                     android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+<!--                <ImageView-->
+<!--                    android:layout_width="16dp"-->
+<!--                    android:layout_height="16dp"-->
+<!--                    android:src="@android:drawable/ic_menu_moreoverflow_vertical_holo_light"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toTopOf="parent"-->
+<!--                    app:tint="@color/black" />-->
 
                 <TextView
                     android:id="@+id/tv_latency"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="40dp"
                     android:fontFamily="@font/poppinmedium"
-                    android:text="Latency : 0 ms"
+                    android:includeFontPadding="false"
+                    android:text="92"
                     android:textColor="@color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Execution Result"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_gcode_lines"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="G-code Lines : 0"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_executed_lines"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Executed Lines : 0"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_execution_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Execution Status : Completed"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Data Integrity"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_firebase_log"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Firebase Log : Saved"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_sd_card_log"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="SD Card Log : Saved"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_data_sync"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Data Sync : Successfull"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="vertical">
+                    android:textSize="40sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/lbl_latency" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
                     android:fontFamily="@font/poppinmedium"
-                    android:text="System Status"
+                    android:text="ms"
                     android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:layout_constraintBaseline_toBaselineOf="@+id/tv_latency"
+                    app:layout_constraintStart_toEndOf="@+id/tv_latency" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Total Lines Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_total_lines"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:layout_constraintBottom_toBottomOf="@id/card_latency"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toEndOf="@+id/card_latency"
+            app:layout_constraintTop_toTopOf="@id/card_latency">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/lbl_total_lines"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppinsbold"
+                    android:text="Total Lines"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+<!--                <ImageView-->
+<!--                    android:layout_width="16dp"-->
+<!--                    android:layout_height="16dp"-->
+<!--                    android:src="@android:drawable/ic_menu_moreoverflow_vertical_holo_light"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toTopOf="parent"-->
+<!--                    app:tint="@color/black" />-->
+
+                <TextView
+                    android:id="@+id/tv_total_lines"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:includeFontPadding="false"
+                    android:text="350"
+                    android:textColor="@color/black"
+                    android:textSize="40sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/lbl_total_lines" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Main Info Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_main_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@id/card_latency">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppinsbold"
+                    android:layout_marginTop="8dp"
+                    android:text="Execution Result"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tv_gcode_lines"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="G-code Lines : 350"
+                    android:textColor="#555555"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_executed_lines"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="Executed Lines : 350"
+                    android:textColor="#555555"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_execution_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="Execution Status : Completed"
+                    android:textColor="#555555"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_print_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="16dp"
+                    android:background="#DDDDDD" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppinsbold"
+                    android:layout_marginTop="8dp"
+                    android:text="Data Integrity"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tv_firebase_log"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="Firebase Log : Saved"
+                    android:textColor="#555555"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_sd_card_log"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="SD Card Log : Saved"
+                    android:textColor="#555555"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_data_sync"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="Data Sync : Successfull"
+                    android:textColor="#555555"
                     android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/tv_iot_communication"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Iot Communication : Stable"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
+                    android:visibility="gone" />
                 <TextView
                     android:id="@+id/tv_machine_status"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="@font/poppinmedium"
-                    android:text="Machine Status : Normal"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    android:visibility="gone" />
+
             </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/dashed_line"
-                android:layerType="software" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
+        <!-- Return Home Button -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_return_home"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/gradient_cyan_bg"
+            android:fontFamily="@font/poppinsbold"
+            android:text="Return to Home"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/card_main_info" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btn_return_home"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="15dp"
-        android:background="@drawable/gradient_cyan_bg"
-        android:fontFamily="@font/poppinsbold"
-        android:text="Return to Home"
-        android:textAllCaps="false"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/card_analytics" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
