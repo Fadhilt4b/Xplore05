@@ -3,27 +3,32 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
+
     <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#E8F1F8">
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#E8F1F8"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="20dp"
-            android:paddingBottom="5dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="20dp"
             android:paddingLeft="20dp"
             android:paddingRight="20dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="10dp">
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="15dp">
 
                 <ImageView
                     android:id="@+id/btnBack"
@@ -48,7 +53,7 @@
                 android:layout_marginBottom="15dp"
                 app:cardCornerRadius="12dp"
                 android:visibility="visible"
-                app:cardElevation="10dp">
+                app:cardElevation="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -278,7 +283,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_centerInParent="true"
                     android:fontFamily="@font/poppinmedium"
                     android:visibility="gone"
                     android:text="60%"
@@ -289,13 +293,18 @@
 
         </LinearLayout>
     </ScrollView>
+
     <FrameLayout
         android:id="@+id/sendingOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:background="#CC000000"
         android:visibility="gone"
-        android:elevation="16dp">
+        android:elevation="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="220dp"
@@ -306,14 +315,12 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- Spinner putar -->
             <ProgressBar
                 android:layout_width="52dp"
                 android:layout_height="52dp"
                 android:indeterminate="true"
                 android:indeterminateTint="@color/abu_abu" />
 
-            <!-- Teks status -->
             <TextView
                 android:id="@+id/sendingStatusText"
                 android:layout_width="wrap_content"
@@ -323,10 +330,9 @@
                 android:text="Mengirim ke device..."
                 android:textColor="#333333"
                 android:textSize="14sp" />
-
         </LinearLayout>
-
     </FrameLayout>
+
     <include
         layout="@layout/view_loading_overlay" />
 

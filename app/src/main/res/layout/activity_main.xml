@@ -1,229 +1,232 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F0F4F8">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <RelativeLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/header_background"
-            android:paddingTop="10dp"
-            android:elevation="8dp"
-            android:paddingBottom="10dp"
-            android:paddingLeft="20dp">
+            android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/tv_header_top"
+            <!-- Header Section -->
+            <RelativeLayout
+                android:id="@+id/header_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/poppinsbold"
-                android:text="X-Plore"
-                android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:background="@drawable/header_background"
+                android:elevation="8dp"
+                android:paddingLeft="20dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="20dp"
+                app:layout_constraintTop_toTopOf="parent">
 
-            <ImageView
-                android:id="@+id/img_illustration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_below="@id/tv_header_top"
-                android:contentDescription="Illustration"
-                android:src="@drawable/pcb_image" />
-
-            <TextView
-                android:id="@+id/tv_header_bottom"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/img_illustration"
-                android:layout_marginTop="0dp"
-                android:fontFamily="@font/alfaslaboneregular"
-                android:text="What would \nyou like to do?"
-                android:textColor="@color/white"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:lineSpacingExtra="4dp"
-                android:shadowColor="#40000000"
-                android:shadowDx="6"
-                android:shadowDy="6"
-                android:shadowRadius="4" />
-
-            <TextView
-                android:id="@+id/deviceAddressHome"
-                android:layout_below="@+id/tv_header_bottom"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:text="No device connected"
-                android:visibility="invisible"
-                android:textStyle="italic"
-                android:layout_marginTop="10dp"
-                android:fontFamily="@font/poppinmedium"
-                android:textColor="@color/white"/>
-            <TextView
-                android:id="@+id/deviceState"
-                android:layout_below="@+id/deviceAddressHome"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="System Idle"
-                android:visibility="invisible"
-                android:textColor="@color/white"
-                android:fontFamily="@font/poppinmedium"
-                android:textSize="12sp"
-                android:textStyle="italic"/>
-            <LinearLayout
-                android:id="@+id/disconnectBt"
-                android:layout_below="@+id/deviceState"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:background="@drawable/bt_disconnect"
-                android:visibility="invisible">
                 <TextView
+                    android:id="@+id/tv_header_top"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/poppinsbold"
+                    android:text="X-Plore"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/img_illustration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Disconnect"
+                    android:layout_below="@id/tv_header_top"
+                    android:layout_alignParentEnd="true"
+                    android:contentDescription="Illustration"
+                    android:src="@drawable/pcb_image" />
+
+                <TextView
+                    android:id="@+id/tv_header_bottom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/img_illustration"
+                    android:layout_marginTop="-10dp"
+                    android:fontFamily="@font/alfaslaboneregular"
+                    android:lineSpacingExtra="4dp"
+                    android:shadowColor="#40000000"
+                    android:shadowDx="6"
+                    android:shadowDy="6"
+                    android:shadowRadius="4"
+                    android:text="What would \nyou like to do?"
+                    android:textColor="@color/white"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/deviceAddressHome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/tv_header_bottom"
+                    android:layout_marginTop="10dp"
                     android:fontFamily="@font/poppinmedium"
-                    android:textColor="@color/black"
-                    android:textSize="10sp"/>
-            </LinearLayout>
+                    android:text="No device connected"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="italic"
+                    android:visibility="invisible" />
 
-        </RelativeLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="right"
-            android:orientation="vertical"
-            android:layout_marginLeft="0dp">
-            <View
-                android:layout_width="match_parent"
-                android:layout_weight="3"
-                android:layout_height="0dp">
-            </View>
-
-            <LinearLayout
-                android:id="@+id/btn_convert"
-                android:layout_width="350dp"
-                android:layout_height="125dp"
-                android:elevation="8dp"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/card_option_bg"
-                android:orientation="horizontal"
-                android:layout_weight="1"
-                android:padding="20dp"
-                android:clickable="true"
-                android:focusable="true">
+                <TextView
+                    android:id="@+id/deviceState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/deviceAddressHome"
+                    android:fontFamily="@font/poppinmedium"
+                    android:text="System Idle"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="italic"
+                    android:visibility="invisible" />
 
                 <LinearLayout
-                    android:layout_width="190dp"
+                    android:id="@+id/disconnectBt"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:layout_below="@+id/deviceState"
+                    android:layout_marginTop="5dp"
+                    android:background="@drawable/bt_disconnect"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:visibility="invisible">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppinsbold"
-                        android:text="Convert"
-                        android:textColor="@color/white"
-                        android:textSize="20sp" />
+                        android:fontFamily="@font/poppinmedium"
+                        android:text="Disconnect"
+                        android:textColor="@color/black"
+                        android:textSize="10sp" />
+                </LinearLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
+            </RelativeLayout>
+
+            <!-- Menu Buttons Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:layout_marginBottom="30dp"
+                android:gravity="end"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/header_section"
+                app:layout_constraintVertical_bias="0.3">
+
+                <LinearLayout
+                    android:id="@+id/btn_convert"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/card_option_bg"
+                    android:clickable="true"
+                    android:elevation="8dp"
+                    android:focusable="true"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppinsregular"
-                        android:text="Turn Gerber files into\nCNC-ready G-Code\ninstantly.\n"
-                        android:textColor="@color/white"
-                        android:textSize="12sp" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppinsbold"
+                            android:text="Convert"
+                            android:textColor="@color/white"
+                            android:textSize="20sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppinsregular"
+                            android:text="Turn Gerber files into\nCNC-ready G-Code\ninstantly."
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1.5dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginHorizontal="15dp"
+                        android:background="@color/white" />
+
+                    <ImageView
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/convert" />
 
                 </LinearLayout>
 
-                <View
-                    android:layout_width="1.5dp"
-                    android:layout_height="100dp"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginHorizontal="15dp"
-                    android:background="@color/white" />
-                <ImageView
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    android:layout_gravity="center_vertical"
-                    android:scaleX="1.2"
-                    android:scaleY="1.2"
-                    android:src="@drawable/convert"
-                    android:layout_marginRight="10dp"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/btn_print"
-                android:layout_width="350dp"
-                android:layout_height="125dp"
-                android:background="@drawable/card_option_bg"
-                android:elevation="8dp"
-                android:orientation="horizontal"
-                android:layout_weight="1"
-                android:padding="20dp"
-                android:clickable="true"
-                android:focusable="true">
-
                 <LinearLayout
-                    android:layout_width="157dp"
+                    android:id="@+id/btn_print"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:layout_marginStart="40dp"
+                    android:background="@drawable/card_option_bg"
+                    android:clickable="true"
+                    android:elevation="8dp"
+                    android:focusable="true"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppinsbold"
-                        android:text="Print"
-                        android:textColor="@color/white"
-                        android:textSize="20sp" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppinsregular"
-                        android:text="Send your design\ndirectly to the printer."
-                        android:textColor="@color/white"
-                        android:textSize="12sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppinsbold"
+                            android:text="Print"
+                            android:textColor="@color/white"
+                            android:textSize="20sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppinsregular"
+                            android:text="Send your design\ndirectly to the printer."
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1.5dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginHorizontal="15dp"
+                        android:background="@color/white" />
+
+                    <ImageView
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/print" />
                 </LinearLayout>
 
-                <View
-                    android:layout_width="1.5dp"
-                    android:layout_height="100dp"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginHorizontal="15dp"
-                    android:background="@color/white" />
-
-                <ImageView
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    android:scaleX="1.2"
-                    android:scaleY="1.2"
-                    android:layout_gravity="center_vertical"
-                    android:src="@drawable/print"
-                    android:layout_marginRight="10dp"/>
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="3">
-            </View>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
-        </LinearLayout>
-
-    </LinearLayout>
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

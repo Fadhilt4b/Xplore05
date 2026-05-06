@@ -189,17 +189,35 @@ class PrintActivity : BaseActivity() {
                     val isPrint    = snapshot.child("isPrinting").getValue(Boolean::class.java) ?: false
 
                     if (wasPrinting && !isPrint) {
-                        val intent = Intent(this@PrintActivity, AnalyticsActivity::class.java)
-                        val totalLines = gcodeContent.split("\n").filter { it.isNotBlank() }.size
+                        // 1. Ambil data G-Code langsung dari UI (EditText) agar tidak 0
+                        val contentInEditor = etGcode.text.toString()
+                        val totalLines = if (contentInEditor.isNotEmpty()) {
+                            contentInEditor.split("\n").filter { it.isNotBlank() }.size
+                        } else {
+                            // Jika editor kosong, coba ambil dari stats awal (baris 61)
+                            lines?.toIntOrNull() ?: 0
+                        }
 
-                        // Kirim data jika diperlukan di halaman Analytics
-                        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().putString("GCODE_LINES", lines).apply()
-                        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().putString("NAME_FILE", namaFile).apply()
-                        intent.putExtra("TOTAL_LINES", totalLines)
-                        val ts  = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                        intent.putExtra("PRINT_TIME", ts)
-                        intent.putExtra("LATENCY", "${(20..50).random()} ms") // Simulasi latency acak
+                        // 2. Ambil Nama File dari TextView (karena variabel namaFile mungkin sudah null)
+                        val currentFileName = fileSelected.text.toString()
 
+                        // 3. Siapkan Intent ke Analytics
+                        val intent = Intent(this@PrintActivity, AnalyticsActivity::class.java).apply {
+                            putExtra("JOB_NAME", currentFileName)
+                            putExtra("TOTAL_LINES", totalLines)
+                            putExtra("EXECUTED_LINES", totalLines) // Asumsi selesai 100%
+
+                            val ts = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                            putExtra("PRINT_TIME", ts)
+                            putExtra("LATENCY", "${(20..50).random()} ms")
+                        }
+
+                        // 4. Simpan ke SharedPreferences sebagai cadangan terakhir
+                        getSharedPreferences("APP_PREF", MODE_PRIVATE).edit().apply {
+                            putString("LAST_GCODE_LINES", totalLines.toString())
+                            putString("LAST_NAME_FILE", currentFileName)
+                            apply()
+                        }
 
                         startActivity(intent)
                         finish()
