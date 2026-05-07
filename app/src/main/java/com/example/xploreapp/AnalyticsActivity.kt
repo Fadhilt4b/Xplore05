@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import java.util.Locale
 
 class AnalyticsActivity : AppCompatActivity() {
 
@@ -26,7 +27,6 @@ class AnalyticsActivity : AppCompatActivity() {
         val tvTotalLines  = findViewById<TextView>(R.id.tv_total_lines)
         val tvPrintTime   = findViewById<TextView>(R.id.tv_print_time)
         val tvLatency     = findViewById<TextView>(R.id.tv_latency)
-        val tvGcodeLines  = findViewById<TextView>(R.id.tv_gcode_lines)
         val tvExecutedLines = findViewById<TextView>(R.id.tv_executed_lines)
         val tvExecutionStatus = findViewById<TextView>(R.id.tv_execution_status)
         val tvFirebaseLog = findViewById<TextView>(R.id.tv_firebase_log)
@@ -35,36 +35,26 @@ class AnalyticsActivity : AppCompatActivity() {
         val btnReturnHome = findViewById<Button>(R.id.btn_return_home)
 
 
-        val fullJobName     = intent.getStringExtra("JOB_NAME") ?: "PCB_TEST_A"
-        val intentJobName   = fullJobName.removeSuffix(".gbr")
-        val intentTotal     = intent.getIntExtra("TOTAL_LINES", 135)
-        val intentExecuted  = intent.getIntExtra("EXECUTED_LINES", 350)
-        val intentPrintTime = intent.getStringExtra("PRINT_TIME") ?: "00:00"
-        val intentLatency   = intent.getStringExtra("LATENCY") ?: "92 ms"
+        val fullJobName     = intent.getStringExtra("JOB_NAME") ?: "Unknown"
+        val intentJobName   = fullJobName.removeSuffix(".gbr").removeSuffix(".gcode")
+        val intentTotal     = intent.getIntExtra("TOTAL_LINES", 0)
+        val intentExecuted  = intent.getIntExtra("EXECUTED_LINES", 0)
+        val intentPrintTime = intent.getStringExtra("PRINT_TIME") ?: "00:00:00"
+        val intentLatency   = intent.getStringExtra("LATENCY") ?: "0 ms"
 
         tvJobName.text       = intentJobName
         tvTotalLines.text    = intentTotal.toString()
         tvPrintTime.text     = "Print Time : $intentPrintTime"
-        
-        // Hapus " ms" agar tidak ganda dengan yang ada di XML
         tvLatency.text       = intentLatency.replace(" ms", "").trim()
-        
-        tvGcodeLines.text    = "G-code Lines : $intentTotal"
 
-        if (intentJobName == "PCB_TEST_A") {
-            tvGcodeLines.text = "G-code Lines : 350"
-            tvExecutedLines.text = "Executed Lines : 350"
-            tvTotalLines.text = "135"
-            tvLatency.text = "92" // Hanya angka
-        } else {
-            val finalExecuted = if (intentExecuted > 0) intentExecuted else intentTotal
-            tvExecutedLines.text = "Executed Lines : $finalExecuted"
-        }
+        val finalExecuted = if (intentExecuted > 0) intentExecuted else intentTotal
+        tvExecutedLines.text = "Executed Lines : $finalExecuted"
 
         tvExecutionStatus.text = "Execution Status : Completed"
         tvFirebaseLog.text     = "Firebase Log : Saved"
         tvSdCardLog.text       = "SD Card Log : Saved"
         tvDataSync.text        = "Data Sync : Successfull"
+        
         btnReturnHome.setOnClickListener {
             kembaliKeHome()
         }

@@ -63,7 +63,7 @@ class PrintActivity : BaseActivity() {
     private var sendingStateListener: ValueEventListener? = null
     private var wasPrinting: Boolean = false
 
-    private var startTime: Long = 0L // Tambahkan ini <---
+    private var startTime: Long = 0L
     private val PICK_GCODE = 1001
 
     private var lines: String? = ""
@@ -188,13 +188,22 @@ class PrintActivity : BaseActivity() {
                     val safeProgress = progress.coerceIn(0, 100)
                     val isPrint    = snapshot.child("isPrinting").getValue(Boolean::class.java) ?: false
 
+                    if (!wasPrinting && isPrint) {
+                        startTime = System.currentTimeMillis()
+                    }
+
                     if (wasPrinting && !isPrint) {
-                        // 1. Ambil data G-Code langsung dari UI (EditText) agar tidak 0
+                        val durationMs = if (startTime > 0) System.currentTimeMillis() - startTime else 0L
+                        val hours = (durationMs / (1000 * 60 * 60))
+                        val minutes = (durationMs / (1000 * 60)) % 60
+                        val seconds = (durationMs / 1000) % 60
+                        val durationStr = String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+
+                        // Ambil data G-Code dll...
                         val contentInEditor = etGcode.text.toString()
                         val totalLines = if (contentInEditor.isNotEmpty()) {
                             contentInEditor.split("\n").filter { it.isNotBlank() }.size
                         } else {
-                            // Jika editor kosong, coba ambil dari stats awal (baris 61)
                             lines?.toIntOrNull() ?: 0
                         }
 
@@ -208,7 +217,7 @@ class PrintActivity : BaseActivity() {
                             putExtra("EXECUTED_LINES", totalLines) // Asumsi selesai 100%
 
                             val ts = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                            putExtra("PRINT_TIME", ts)
+                            putExtra("PRINT_TIME", durationStr)
                             putExtra("LATENCY", "${(20..50).random()} ms")
                         }
 

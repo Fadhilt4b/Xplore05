@@ -6,21 +6,47 @@
     android:layout_height="match_parent"
     android:background="@color/abu_abu"
     android:fillViewport="true">
-
+    
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="20dp">
 
+        <RelativeLayout
+            android:id="@+id/layout_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/backbutton" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:fontFamily="@font/poppinsbold"
+                android:text="Result &amp; Analytics"
+                android:textColor="#000000"
+                android:textSize="20sp" />
+        </RelativeLayout>
+        
         <!-- Header Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/card_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="24dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@id/layout_toolbar">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -32,22 +58,22 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/poppinsbold"
-                    android:text="Result &amp; Analytics"
+                    android:text="Job Name :"
                     android:textColor="@color/black"
-                    android:textSize="18sp" />
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tv_job_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="10dp"
                     android:paddingStart="20dp"
                     android:background="@drawable/gradient_cyan_bg"
-                    android:fontFamily="@font/poppinsbold"
+                    android:fontFamily="@font/poppinmedium"
                     android:padding="12dp"
                     android:text="PCB_TEST_A"
                     android:textColor="@color/white"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -57,7 +83,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="8dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
             app:layout_constraintEnd_toStartOf="@+id/card_total_lines"
@@ -81,20 +107,12 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-<!--                <ImageView-->
-<!--                    android:layout_width="16dp"-->
-<!--                    android:layout_height="16dp"-->
-<!--                    android:src="@android:drawable/ic_menu_moreoverflow_vertical_holo_light"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintTop_toTopOf="parent"-->
-<!--                    app:tint="@color/black" />-->
-
                 <TextView
                     android:id="@+id/tv_latency"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="40dp"
-                    android:fontFamily="@font/poppinmedium"
+                    android:layout_marginTop="32dp"
+                    android:fontFamily="@font/poppinsbold"
                     android:includeFontPadding="false"
                     android:text="92"
                     android:textColor="@color/black"
@@ -107,7 +125,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:fontFamily="@font/poppinmedium"
+                    android:fontFamily="@font/poppinsbold"
                     android:text="ms"
                     android:textColor="@color/black"
                     android:textSize="14sp"
@@ -121,7 +139,7 @@
             android:id="@+id/card_total_lines"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="8dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
             app:layout_constraintBottom_toBottomOf="@id/card_latency"
@@ -146,20 +164,12 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-<!--                <ImageView-->
-<!--                    android:layout_width="16dp"-->
-<!--                    android:layout_height="16dp"-->
-<!--                    android:src="@android:drawable/ic_menu_moreoverflow_vertical_holo_light"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintTop_toTopOf="parent"-->
-<!--                    app:tint="@color/black" />-->
-
                 <TextView
                     android:id="@+id/tv_total_lines"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="40dp"
-                    android:fontFamily="@font/poppinmedium"
+                    android:layout_marginTop="32dp"
+                    android:fontFamily="@font/poppinsbold"
                     android:includeFontPadding="false"
                     android:text="350"
                     android:textColor="@color/black"
@@ -196,12 +206,12 @@
                     android:textSize="16sp" />
 
                 <TextView
-                    android:id="@+id/tv_gcode_lines"
+                    android:id="@+id/tv_print_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:fontFamily="@font/poppinmedium"
-                    android:text="G-code Lines : 350"
+                    android:text="Print Time : 00:00"
                     android:textColor="#555555"
                     android:textSize="14sp" />
 
@@ -220,17 +230,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
                     android:fontFamily="@font/poppinmedium"
                     android:text="Execution Status : Completed"
                     android:textColor="#555555"
                     android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_print_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone" />
 
                 <View
                     android:layout_width="match_parent"
@@ -242,7 +245,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/poppinsbold"
-                    android:layout_marginTop="8dp"
                     android:text="Data Integrity"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
@@ -297,7 +299,7 @@
             android:id="@+id/btn_return_home"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="24dp"
             android:layout_marginBottom="15dp"
             android:background="@drawable/gradient_cyan_bg"
             android:fontFamily="@font/poppinsbold"
